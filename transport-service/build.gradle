@@ -5,11 +5,22 @@
  * Learn how to create Gradle builds at https://guides.gradle.org/creating-new-gradle-builds/
  */
 
-apply plugin: 'application'
-mainClassName = 'com.oybek.ekbts.Main'
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.9.RELEASE")
+    }
+}
 
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+
+// allows to execute any JAR file in the project by specifying the main entry class for execution
+apply plugin: 'application'
+mainClassName = 'com.oybek.ekbts.Main'
 
 jar {
     baseName = 'transport-service'
@@ -20,10 +31,16 @@ repositories {
     mavenCentral()
 }
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 dependencies {
     testCompile 'junit:junit:4.12'
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
 
+    compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'com.google.code.gson:gson:2.8.1'
     compile 'org.jfree:jfreesvg:3.3'
     compile 'org.jsoup:jsoup:1.11.1'
+    compile 'org.springframework.boot:spring-boot-starter-web'
 }
