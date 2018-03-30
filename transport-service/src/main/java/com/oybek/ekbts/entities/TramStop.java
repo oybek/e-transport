@@ -45,20 +45,52 @@ public class TramStop {
     @SerializedName("TTU_IDS")
     private String ttuIds;
 
-    @SerializedName("LONGITUDE")
-    private double longitude;
-
     @SerializedName("LATITUDE")
-    private double latitude;
+    private double lon;
 
-    @SerializedName("LAT")
+    @SerializedName("LONGITUDE")
     private double lat;
 
+    @SerializedName("LAT")
+    private double latitude;
+
     @SerializedName("LON")
-    private double lon;
+    private double longitude;
 
     @SerializedName("ACCURACY")
     private double accuracy;
+
+    public String getName() {
+        return name;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
 
     @Override
     public String toString() {
@@ -77,8 +109,8 @@ public class TramStop {
                 ", direction='" + direction + '\'' +
                 ", trLayer='" + trLayer + '\'' +
                 ", ttuIds='" + ttuIds + '\'' +
-                ", longitude=" + longitude +
                 ", latitude=" + latitude +
+                ", longitude=" + longitude +
                 ", lat=" + lat +
                 ", lon=" + lon +
                 ", accuracy='" + accuracy + '\'' +

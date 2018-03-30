@@ -1,41 +1,39 @@
 package com.oybek.ekbts;
 
-import com.google.gson.Gson;
 import com.oybek.ekbts.entities.TramStop;
+import com.sun.javafx.geom.Vec2d;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Main
 {
     public static void main(String[] args)
     {
-        Gson gson = new Gson();
+        Engine engine = new Engine();
 
-        Main obj = new Main();
+        TramStop tramStop = engine.getNearest( new Vec2d( 56.844202, 60.499352 ) );
+        System.out.println( tramStop.toString() );
 
-        try (Reader reader = new FileReader(obj.getResourceFile("json/tram-stops.json")))
-        {
-			// Convert JSON to Java Object
-            TramStop[] tramStopsRaw = gson.fromJson(reader, TramStop[].class);
-
-            ArrayList<TramStop> tramStops = new ArrayList<>( Arrays.asList(tramStopsRaw) );
-
-            System.out.println(tramStops.size());
-
+        // JSoup Example 2 - Reading HTML page from URL
+        Document doc;
+        try {
+            doc = Jsoup.connect("http://m.ettu.ru/station/3408").get();
+            System.out.println( doc.select("p").first().text() );
+            for( Element div : doc.select( "div" ) )
+            {
+                if(div.children().size() == 3)
+                {
+                    String msg = "";
+                    for( Element child : div.children() )
+                        msg += child.text() + ", ";
+                    System.out.println(msg + "\n");
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public File getResourceFile( String fileName )
-    {
-        //Get file from resources folder
-        ClassLoader classLoader = getClass().getClassLoader();
-        return new File(classLoader.getResource(fileName).getFile());
     }
 }
