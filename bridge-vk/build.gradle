@@ -44,3 +44,8 @@ dependencies {
     compile 'org.jsoup:jsoup:1.11.1'
     compile 'org.springframework.boot:spring-boot-starter-web'
 }
+
+bootRun {
+  // support passing -Dsystem.property=value to bootRun task
+  systemProperties = System.properties
+}

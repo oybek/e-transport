@@ -1,16 +1,29 @@
 package com.oybek.bridgevk;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.oybek.bridgevk.Entities.Geo;
+import com.oybek.bridgevk.Entities.Message;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.TimerTask;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
-@RestController
+import static org.springframework.http.HttpHeaders.USER_AGENT;
+
+@Component
 public class Courier {
-    @Value("${accessToken}")
+    @Value("${vk.token}")
     private String accessToken;
-    private String sendMessageURL = "https://api.vk.com/method/messages.send?v=3.0&user_id={user_id}&message={message}&access_token={access_token}";
-    private String getMessageUrl = "https://api.vk.com/method/messages.get?last_message_id={last_message_id}&access_token={access_token}&v=3";
+
+    private String sendMessageURL = "https://api.vk.com/method/messages.send?v=3.0&user_id=%d&message=%s&access_token=%s";
+    private String getMessageUrl = "https://api.vk.com/method/messages.get?last_message_id=%d&access_token=%s&v=3";
 
     @Value("${artificialPing}")
     private long artificialPing = 1000;
@@ -30,8 +43,82 @@ public class Courier {
         }).start();
     }
 
+	// HTTP GET request
+	private String get( String urlStr ) throws Exception {
+
+		URL obj = new URL( urlStr );
+		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+
+		// optional default is GET
+		con.setRequestMethod("GET");
+
+		//add request header
+		con.setRequestProperty("User-Agent", USER_AGENT);
+
+		int responseCode = con.getResponseCode();
+		System.out.println("Response Code : " + responseCode);
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+		in.close();
+
+		// return result
+        return response.toString();
+	}
+
     private void update() {
-        System.out.println("hello, world\n");
+        try {
+            JsonParser parser = new JsonParser();
+            JsonObject o = parser.parse(get( String.format(getMessageUrl, lastMessageId, accessToken) )).getAsJsonObject();
+
+            if( o.has("response") ) {
+                JsonArray arr = o.get("response").getAsJsonArray();
+                for (JsonElement element : arr) {
+                    if (element.isJsonObject()) {
+                        JsonObject jObj = element.getAsJsonObject();
+
+                        Geo geo = null;
+                        if (jObj.has("geo")) {
+                            String coord = jObj.get("geo").getAsJsonObject().get("coordinates").getAsString();
+                            String[] splitted = coord.split("\\s+");
+                            geo = new Geo(Double.parseDouble(splitted[0]), Double.parseDouble(splitted[1]));
+                        }
+
+                        Message msg = new Message(
+                                jObj.get("mid").getAsLong()
+                                , jObj.get("date").getAsLong()
+                                , jObj.get("uid").getAsLong()
+                                , jObj.get("read_state").getAsLong()
+                                , jObj.get("body").getAsString()
+                                , geo
+                        );
+
+                        lastMessageId = Math.max(lastMessageId, msg.getId());
+
+                        if (msg.getReadState() == 0) {
+                            System.out.println(msg.toString());
+                            queueController.getQueueToBot().add(msg);
+                        }
+                    }
+                }
+            }
+        } catch( Exception e ) {
+            e.printStackTrace();
+        }
+
+        try {
+            Message message = queueController.getQueueFromBot().poll();
+            if( message != null ) {
+                get( String.format( sendMessageURL, message.getUid(), message.getText(), accessToken ) );
+            }
+        } catch( Exception e ) {
+            e.printStackTrace();
+        }
 
         try {
             Thread.sleep(artificialPing);
