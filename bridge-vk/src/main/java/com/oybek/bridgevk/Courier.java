@@ -44,7 +44,7 @@ public class Courier {
     }
 
 	// HTTP GET request
-	private String get( String urlStr ) throws Exception {
+	public static String get( String urlStr ) throws Exception {
 
 		URL obj = new URL( urlStr );
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -56,7 +56,6 @@ public class Courier {
 		con.setRequestProperty("User-Agent", USER_AGENT);
 
 		int responseCode = con.getResponseCode();
-		System.out.println("Response Code : " + responseCode);
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		String inputLine;
