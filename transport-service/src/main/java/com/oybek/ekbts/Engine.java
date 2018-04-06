@@ -3,7 +3,6 @@ package com.oybek.ekbts;
 import com.google.gson.Gson;
 import com.oybek.ekbts.entities.TramStop;
 import com.sun.javafx.geom.Vec2d;
-import org.jfree.graphics2d.svg.SVGGraphics2D;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;

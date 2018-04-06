@@ -49,8 +49,12 @@ public class SuperBot {
                     if( msg.getGeo() == null ) {
                         answer.append("Для того чтобы я мог определить остановку отправьте ее геопозицию, или вашу текущую если вы уже на остановке");
                     } else {
-                        JsonArray jsonArray = parser.parse(Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()))).getAsJsonArray();
-                        if (jsonArray != null) {
+                        JsonElement jsonElement = parser.parse(Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude())));
+
+                        if(jsonElement.getAsJsonObject().get("tramInfoList").isJsonNull()) {
+                            answer.append("Извините, не удалось найти информацию о трамваях 😞");
+                        } else {
+                            JsonArray jsonArray = jsonElement.getAsJsonObject().get("tramInfoList").getAsJsonArray();
                             for (JsonElement element : jsonArray) {
                                 if (element.isJsonObject()) {
                                     JsonObject jObj = element.getAsJsonObject();
@@ -64,8 +68,6 @@ public class SuperBot {
                                     }
                                 }
                             }
-                        } else {
-                            answer.append("Извините, не удалось найти информацию о трамваях 😞");
                         }
                     }
 

@@ -1,5 +1,6 @@
 package com.oybek.ekbts;
 
+import com.oybek.ekbts.entities.Result;
 import com.oybek.ekbts.entities.TramInfo;
 import com.oybek.ekbts.entities.TramStop;
 import org.jsoup.Jsoup;
@@ -15,7 +16,7 @@ import java.util.List;
 public class Ettu {
     String baseUrl = "http://m.ettu.ru/station/";
 
-    public List<TramInfo> getInfo(TramStop tramStop) {
+    public Result getInfo(TramStop tramStop) {
         // JSoup Example 2 - Reading HTML page from URL
         Document doc;
         try {
@@ -37,12 +38,12 @@ public class Ettu {
                     }
                 }
 
-                return tramInfos;
+                return new Result(tramInfos);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return null;
+        return new Result(null);
     }
 }
