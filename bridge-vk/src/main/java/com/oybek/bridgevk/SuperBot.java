@@ -27,43 +27,54 @@ public class SuperBot {
     }
 
     public void work() {
-        // if no work ...
-        if( queueController.getQueueToBot().isEmpty() ) {
-            // ... sleep 0.5 second
-            try {
-                Thread.sleep(500);
-            } catch( InterruptedException e ) {
-                e.printStackTrace();
-                return;
-            }
-        } else {
-            // ... echo income message
-            Message msg = queueController.getQueueToBot().poll();
+        while( true ) {
+            // if no work ...
+            if (queueController.getQueueToBot().isEmpty()) {
+                // ... sleep 0.5 second
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                }
+            } else {
+                // ... echo income message
+                Message msg = queueController.getQueueToBot().poll();
 
-            try {
-                JsonParser parser = new JsonParser();
+                try {
+                    JsonParser parser = new JsonParser();
 
-                System.out.println( Courier.get( String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()) ) );
+                    StringBuilder answer = new StringBuilder();
 
-                StringBuilder answer = new StringBuilder();
+                    if( msg.getGeo() == null ) {
+                        answer.append("Для того чтобы я мог определить остановку отправьте ее геопозицию, или вашу текущую если вы уже на остановке");
+                    } else {
+                        JsonArray jsonArray = parser.parse(Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()))).getAsJsonArray();
+                        if (jsonArray != null) {
+                            for (JsonElement element : jsonArray) {
+                                if (element.isJsonObject()) {
+                                    JsonObject jObj = element.getAsJsonObject();
 
-                if( msg.getGeo() != null ) {
-                    JsonArray jsonArray = parser.parse(Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()))).getAsJsonArray();
-                    for (JsonElement element : jsonArray) {
-                        if (element.isJsonObject()) {
-                            JsonObject jObj = element.getAsJsonObject();
-                            answer.append( jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " минут\n" );
+                                    long timeToReach = jObj.get("timeReach").getAsLong();
+                                    if( timeToReach == 0 ) {
+                                        answer.append(jObj.get("route").getAsString() + "-й трамвай будет меньше, чем через минуту\n" );
+                                    }
+                                    else {
+                                        answer.append(jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " мин.\n");
+                                    }
+                                }
+                            }
+                        } else {
+                            answer.append("Извините, не удалось найти информацию о трамваях 😞");
                         }
                     }
 
-                    msg.setText( URLEncoder.encode(answer.toString(), "UTF-8") );
+                    msg.setText(URLEncoder.encode(answer.toString(), "UTF-8"));
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                queueController.getQueueFromBot().add(msg);
             }
-            queueController.getQueueFromBot().add(msg);
         }
-
-        work();
     }
 }
