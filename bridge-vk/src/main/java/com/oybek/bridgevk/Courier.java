@@ -8,7 +8,6 @@ import com.oybek.bridgevk.Entities.Geo;
 import com.oybek.bridgevk.Entities.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -71,60 +70,46 @@ public class Courier {
 	}
 
     private void update() {
-        try {
-            JsonParser parser = new JsonParser();
-            JsonObject o = parser.parse(get( String.format(getMessageUrl, lastMessageId, accessToken) )).getAsJsonObject();
+        while(true) {
+            try {
+                JsonParser parser = new JsonParser();
+                JsonObject o = parser.parse(get(String.format(getMessageUrl, lastMessageId, accessToken))).getAsJsonObject();
 
-            if( o.has("response") ) {
-                JsonArray arr = o.get("response").getAsJsonArray();
-                for (JsonElement element : arr) {
-                    if (element.isJsonObject()) {
-                        JsonObject jObj = element.getAsJsonObject();
+                if (o.has("response")) {
+                    JsonArray arr = o.get("response").getAsJsonArray();
+                    for (JsonElement element : arr) {
+                        if (element.isJsonObject()) {
+                            JsonObject jObj = element.getAsJsonObject();
 
-                        Geo geo = null;
-                        if (jObj.has("geo")) {
-                            String coord = jObj.get("geo").getAsJsonObject().get("coordinates").getAsString();
-                            String[] splitted = coord.split("\\s+");
-                            geo = new Geo(Double.parseDouble(splitted[0]), Double.parseDouble(splitted[1]));
-                        }
+                            Message msg = new Message(jObj);
 
-                        Message msg = new Message(
-                                jObj.get("mid").getAsLong()
-                                , jObj.get("date").getAsLong()
-                                , jObj.get("uid").getAsLong()
-                                , jObj.get("read_state").getAsLong()
-                                , jObj.get("body").getAsString()
-                                , geo
-                        );
+                            lastMessageId = Math.max(lastMessageId, msg.getId());
 
-                        lastMessageId = Math.max(lastMessageId, msg.getId());
-
-                        if (msg.getReadState() == 0) {
-                            System.out.println(msg.toString());
-                            queueController.getQueueToBot().add(msg);
+                            if (msg.getReadState() == 0) {
+                                System.out.println(msg.toString());
+                                queueController.getQueueToBot().add(msg);
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch( Exception e ) {
-            e.printStackTrace();
-        }
 
-        try {
-            Message message = queueController.getQueueFromBot().poll();
-            if( message != null ) {
-                get( String.format( sendMessageURL, message.getUid(), message.getText(), accessToken ) );
+            try {
+                Message message = queueController.getQueueFromBot().poll();
+                if (message != null) {
+                    get(String.format(sendMessageURL, message.getUid(), message.getText(), accessToken));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch( Exception e ) {
-            e.printStackTrace();
-        }
 
-        try {
-            Thread.sleep(artificialPing);
-        } catch( InterruptedException e ) {
-            e.printStackTrace();
-        } finally {
-            update();
+            try {
+                Thread.sleep(artificialPing);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

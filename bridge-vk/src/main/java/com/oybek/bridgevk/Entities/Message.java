@@ -1,6 +1,7 @@
 package com.oybek.bridgevk.Entities;
 
-import com.sun.javafx.geom.Vec2d;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 
 public class Message {
     private long id;
@@ -17,6 +18,37 @@ public class Message {
         this.readState = readState;
         this.text = text;
         this.geo = geo;
+    }
+
+    public Message(JsonObject jObj) {
+        if (jObj == null) {
+            throw new JsonParseException("Null json object");
+        } else if (!jObj.has("mid")) {
+            throw new JsonParseException("There is no 'mid' field");
+        } else if (!jObj.has("uid")) {
+            throw new JsonParseException("There is no 'uid' field");
+        } else if (!jObj.has("read_state")) {
+            throw new JsonParseException("There is no 'read_state' field");
+        }
+
+        this.id = jObj.get("mid").getAsLong();
+        this.uid = jObj.get("uid").getAsLong();
+        this.date = jObj.get("date").getAsLong();
+        this.readState = jObj.get("read_state").getAsLong();
+
+        if (jObj.has("body")) {
+            this.text = jObj.get("body").getAsString();
+        } else {
+            this.text = null;
+        }
+
+        if (jObj.has("geo")) {
+            String coord = jObj.get("geo").getAsJsonObject().get("coordinates").getAsString();
+            String[] splitted = coord.split("\\s+");
+            this.geo = new Geo(Double.parseDouble(splitted[0]), Double.parseDouble(splitted[1]));
+        } else {
+            this.geo = null;
+        }
     }
 
     public long getId() {
