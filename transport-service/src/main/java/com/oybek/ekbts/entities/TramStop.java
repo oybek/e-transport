@@ -92,6 +92,10 @@ public class TramStop {
         this.longitude = longitude;
     }
 
+    public String getDirection() { return direction; }
+
+    public void setDirection(String direction) { this.direction = direction; }
+
     @Override
     public String toString() {
         return "TramStop{" +

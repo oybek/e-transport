@@ -54,6 +54,7 @@ public class SuperBot {
                         if(jsonElement.getAsJsonObject().get("tramInfoList").isJsonNull()) {
                             answer.append("Извините, не удалось найти информацию о трамваях 😞");
                         } else {
+                            answer.append( "Ближайшая остановка: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
                             JsonArray jsonArray = jsonElement.getAsJsonObject().get("tramInfoList").getAsJsonArray();
                             for (JsonElement element : jsonArray) {
                                 if (element.isJsonObject()) {
