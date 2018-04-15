@@ -1,0 +1,42 @@
+// Apply the java plugin to add support for Java
+
+// In this section you declare where to find the dependencies of your project
+
+allprojects {
+    apply plugin: 'java'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies{
+
+        compile 'org.springframework.boot:spring-boot-starter-web'
+        compile 'org.slf4j:slf4j-api:1.7.25'
+        compile 'com.google.code.gson:gson:2.8.1'
+        compile 'org.jfree:jfreesvg:3.3'
+        compile 'org.projectlombok:lombok:1.16.20'
+        compile 'org.jsoup:jsoup:1.11.1'
+
+
+        testCompile 'junit:junit:4.12'
+        testCompile 'org.springframework.boot:spring-boot-starter-test'
+    }
+
+    buildscript {
+        repositories {
+            mavenCentral()
+        }
+        dependencies {
+            classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.11.RELEASE")
+        }
+    }
+}
+
+dependencies {
+    compile project(':bridge-vk')
+    compile project(':transport-service')
+}

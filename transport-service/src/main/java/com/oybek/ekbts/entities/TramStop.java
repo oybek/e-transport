@@ -2,7 +2,9 @@ package com.oybek.ekbts.entities;
 
 import com.google.gson.annotations.SerializedName;
 import com.sun.javafx.geom.Vec2d;
+import lombok.Data;
 
+@Data
 public class TramStop {
     @SerializedName("ID")
     private String id;
@@ -60,42 +62,6 @@ public class TramStop {
 
     @SerializedName("ACCURACY")
     private double accuracy;
-
-    public String getName() {
-        return name;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
-
-    public String getDirection() { return direction; }
-
-    public void setDirection(String direction) { this.direction = direction; }
 
     public Vec2d getCoord() { return new Vec2d(lat, lon); }
 

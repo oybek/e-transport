@@ -1,29 +1,24 @@
 package com.oybek.bridgevk.Entities;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * Географическая позиция
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Geo {
+    /**
+     * Широта
+     */
     private double latitude;
+    /**
+     * Долгота
+     */
     private double longitude;
-
-    public Geo(double latitude, double longitude) {
-        this.latitude = latitude;
-        this.longitude = longitude;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
 
     @Override
     public String toString() {

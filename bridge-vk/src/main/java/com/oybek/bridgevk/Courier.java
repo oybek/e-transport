@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.oybek.bridgevk.Entities.Geo;
 import com.oybek.bridgevk.Entities.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,59 +15,65 @@ import java.net.URL;
 
 import static org.springframework.http.HttpHeaders.USER_AGENT;
 
+/**
+ * Компонент взаимодействия с VK API
+ */
 @Component
 public class Courier {
+    private final static String sendMessageURL = "https://api.vk.com/method/messages.send?v=3.0&user_id=%d&message=%s&access_token=%s";
+    private final static String getMessageUrl = "https://api.vk.com/method/messages.get?last_message_id=%d&access_token=%s&v=3";
     @Value("${vk.token}")
-    private String accessToken;
+    private static volatile String accessToken;
 
-    private String sendMessageURL = "https://api.vk.com/method/messages.send?v=3.0&user_id=%d&message=%s&access_token=%s";
-    private String getMessageUrl = "https://api.vk.com/method/messages.get?last_message_id=%d&access_token=%s&v=3";
-
-    @Value("${artificialPing}")
-    private long artificialPing = 1000;
+    @Value("${artificialPing:1000}")
+    private long artificialPing;
 
     private QueueController queueController;
 
     private long lastMessageId = 0;
 
-    public Courier( QueueController queueController ) {
+    public Courier(QueueController queueController ) {
         this.queueController = queueController;
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                update();
-            }
-        }).start();
+        new Thread(this::update).start();
     }
 
-	// HTTP GET request
-	public static String get( String urlStr ) throws Exception {
+    /**
+     * Отправка GET-запроса
+     *
+     * @param urlStr - адрес запроса
+     * @return
+     * @throws Exception
+     */
+    static String get(String urlStr) throws Exception {
 
-		URL obj = new URL( urlStr );
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        URL obj = new URL( urlStr );
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-		// optional default is GET
-		con.setRequestMethod("GET");
+        // optional default is GET
+        con.setRequestMethod("GET");
 
-		//add request header
-		con.setRequestProperty("User-Agent", USER_AGENT);
+        //add request header
+        con.setRequestProperty("User-Agent", USER_AGENT);
 
-		int responseCode = con.getResponseCode();
+        int responseCode = con.getResponseCode();
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-		String inputLine;
-		StringBuffer response = new StringBuffer();
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuffer response = new StringBuffer();
 
-		while ((inputLine = in.readLine()) != null) {
-			response.append(inputLine);
-		}
-		in.close();
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
 
-		// return result
+        // return result
         return response.toString();
-	}
+    }
 
+    /**
+     * Периодическое обращение к API за обновлениями
+     */
     private void update() {
         while(true) {
             try {

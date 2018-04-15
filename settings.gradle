@@ -1,0 +1,3 @@
+rootProject.name = 'ekaterinburg-transport'
+include 'transport-service'
+include 'bridge-vk'
