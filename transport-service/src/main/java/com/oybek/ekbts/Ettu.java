@@ -38,7 +38,10 @@ public class Ettu {
                     }
                 }
 
-                return new Result(tramInfos);
+                Result result = new Result(tramInfos);
+                result.setLatitude(tramStop.getLatitude());
+                result.setLongitude(tramStop.getLongitude());
+                return result;
             }
         } catch (IOException e) {
             e.printStackTrace();

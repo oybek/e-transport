@@ -13,7 +13,10 @@ import java.net.URLEncoder;
 public class SuperBot {
     private QueueController queueController;
 
-    private String url = "http://localhost:8888/get?latitude=%f&longitude=%f";
+    // TODO: very bad need to refactor
+    private String url = "http://localhost:8888/get_nearest?latitude=%f&longitude=%f";
+    private String urlGetNearestToNearest = "http://localhost:8888/get_nearest_to_nearest?latitude=%f&longitude=%f";
+    private String urlGetDistance = "http://localhost:8888/get_distance?lat1=%f&lon1=%f&lat2=%f&lon2=%f";
 
     public SuperBot(QueueController queueController) {
         this.queueController = queueController;
@@ -26,6 +29,8 @@ public class SuperBot {
         }).start();
     }
 
+    // TODO: refactor this function, deserialize json before working with message
+    // very bad bad ... bad code
     public void work() {
         while( true ) {
             // if no work ...
@@ -66,6 +71,31 @@ public class SuperBot {
                                     }
                                     else {
                                         answer.append(jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " мин.\n");
+                                    }
+                                }
+                            }
+
+                            double nearestTramStopLatitude = jsonElement.getAsJsonObject().get("latitude").getAsDouble();
+                            double nearestTramStopLongitude = jsonElement.getAsJsonObject().get("longitude").getAsDouble();
+
+                            String requestResult = Courier.get(String.format(urlGetDistance, msg.getGeo().getLatitude(), msg.getGeo().getLongitude(), nearestTramStopLatitude, nearestTramStopLongitude));
+                            final double farValue = 25.0;
+                            if( Double.parseDouble(requestResult) > farValue ) {
+                                jsonElement = parser.parse(Courier.get(String.format(urlGetNearestToNearest, msg.getGeo().getLatitude(), msg.getGeo().getLongitude())));
+
+                                answer.append( "\nДругое направление: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
+                                jsonArray = jsonElement.getAsJsonObject().get("tramInfoList").getAsJsonArray();
+                                for (JsonElement element : jsonArray) {
+                                    if (element.isJsonObject()) {
+                                        JsonObject jObj = element.getAsJsonObject();
+
+                                        long timeToReach = jObj.get("timeReach").getAsLong();
+                                        if( timeToReach == 0 ) {
+                                            answer.append(jObj.get("route").getAsString() + "-й трамвай будет меньше, чем через минуту\n" );
+                                        }
+                                        else {
+                                            answer.append(jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " мин.\n");
+                                        }
                                     }
                                 }
                             }
