@@ -1,6 +1,7 @@
 package com.oybek.ekbts.entities;
 
 import com.google.gson.annotations.SerializedName;
+import com.sun.javafx.geom.Vec2d;
 
 public class TramStop {
     @SerializedName("ID")
@@ -95,6 +96,8 @@ public class TramStop {
     public String getDirection() { return direction; }
 
     public void setDirection(String direction) { this.direction = direction; }
+
+    public Vec2d getCoord() { return new Vec2d(lat, lon); }
 
     @Override
     public String toString() {
