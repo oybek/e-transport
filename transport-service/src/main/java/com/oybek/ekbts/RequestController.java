@@ -42,4 +42,14 @@ public class RequestController {
 
         return result;
     }
+
+    @GetMapping(value = "/get_distance")
+    public double getDistance(
+        @RequestParam("lat1") double lat1,
+        @RequestParam("lon1") double lon1,
+        @RequestParam("lat2") double lat2,
+        @RequestParam("lon2") double lon2 )
+    {
+        return engine.getDistance(lat1, lon1, lat2, lon2);
+    }
 }
