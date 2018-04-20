@@ -6,15 +6,16 @@ import com.oybek.ekbts.entities.TramStop;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@RestController
+@Component
 public class Ettu {
-    String baseUrl = "http://m.ettu.ru/station/";
+    private static final String ETTU_ENDPOINT = "http://m.ettu.ru/station/";
 
     public Result getInfo(TramStop tramStop) {
         // JSoup Example 2 - Reading HTML page from URL
@@ -22,7 +23,7 @@ public class Ettu {
         try {
             String id = tramStop.getId();
             if (id != null) {
-                doc = Jsoup.connect(baseUrl + id).get();
+                doc = Jsoup.connect(ETTU_ENDPOINT + id).get();
 
                 List<TramInfo> tramInfos = new ArrayList<>();
 

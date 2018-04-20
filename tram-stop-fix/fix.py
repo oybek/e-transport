@@ -1,9 +1,6 @@
 
 import json
-import urllib
 import urllib.request
-
-from pprint import pprint
 
 url = 'https://m.ettu.ru/station/'
 data = json.load(open('tram-stops.json', encoding='UTF-8'))

@@ -2,7 +2,18 @@ package com.oybek.bridgevk.Entities;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import static java.lang.Double.parseDouble;
+
+/**
+ * Сообщение
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Message {
     private long id;
     private long date;
@@ -10,15 +21,6 @@ public class Message {
     private long readState;
     private String text;
     private Geo geo;
-
-    public Message(long id, long date, long uid, long readState, String text, Geo geo) {
-        this.id = id;
-        this.date = date;
-        this.uid = uid;
-        this.readState = readState;
-        this.text = text;
-        this.geo = geo;
-    }
 
     public Message(JsonObject jObj) {
         if (jObj == null) {
@@ -45,58 +47,10 @@ public class Message {
         if (jObj.has("geo")) {
             String coord = jObj.get("geo").getAsJsonObject().get("coordinates").getAsString();
             String[] splitted = coord.split("\\s+");
-            this.geo = new Geo(Double.parseDouble(splitted[0]), Double.parseDouble(splitted[1]));
+            this.geo = new Geo(parseDouble(splitted[0]), parseDouble(splitted[1]));
         } else {
             this.geo = null;
         }
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public long getDate() {
-        return date;
-    }
-
-    public void setDate(long date) {
-        this.date = date;
-    }
-
-    public long getUid() {
-        return uid;
-    }
-
-    public void setUid(long uid) {
-        this.uid = uid;
-    }
-
-    public long getReadState() {
-        return readState;
-    }
-
-    public void setReadState(long readState) {
-        this.readState = readState;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public Geo getGeo() {
-        return geo;
-    }
-
-    public void setGeo(Geo geo) {
-        this.geo = geo;
     }
 
     @Override

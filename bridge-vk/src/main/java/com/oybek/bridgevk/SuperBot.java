@@ -21,12 +21,7 @@ public class SuperBot {
     public SuperBot(QueueController queueController) {
         this.queueController = queueController;
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                work();
-            }
-        }).start();
+        new Thread(this::work).start();
     }
 
     // TODO: refactor this function, deserialize json before working with message

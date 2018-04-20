@@ -3,13 +3,18 @@ package com.oybek.ekbts;
 import com.google.gson.Gson;
 import com.oybek.ekbts.entities.TramStop;
 import com.sun.javafx.geom.Vec2d;
+import javafx.application.Platform;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.SortedSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
-@RestController
+@Component
 public class Engine {
     ArrayList<TramStop> tramStops;
 
@@ -20,14 +25,12 @@ public class Engine {
             // Convert JSON to Java Object
             TramStop[] tramStopsRaw = gson.fromJson(reader, TramStop[].class);
             tramStops = new ArrayList<>(Arrays.asList(tramStopsRaw));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public TramStop getNearest(Vec2d coord) {
+    TramStop getNearest(Vec2d coord) {
         if (tramStops.size() == 0) {
             System.out.println("No single tram stop given");
             return null;
@@ -96,7 +99,7 @@ public class Engine {
     public File getResourceFile(String fileName) {
         //Get file from resources folder
         ClassLoader classLoader = getClass().getClassLoader();
-        return new File(classLoader.getResource(fileName).getFile());
+        return new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
     }
 
     private double distance( TramStop stop1, TramStop stop2 ) {

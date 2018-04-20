@@ -1,9 +1,12 @@
 package com.oybek.ekbts.entities;
 
-import com.oybek.ekbts.entities.TramInfo;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+@Data
+@NoArgsConstructor
 public class Result {
     private String tramStopName;
     private double latitude;
@@ -12,37 +15,5 @@ public class Result {
 
     public Result(List<TramInfo> tramInfoList) {
         this.tramInfoList = tramInfoList;
-    }
-
-    public String getTramStopName() {
-        return tramStopName;
-    }
-
-    public void setTramStopName(String tramStopName) {
-        this.tramStopName = tramStopName;
-    }
-
-    public List<TramInfo> getTramInfoList() {
-        return tramInfoList;
-    }
-
-    public void setTramInfoList(List<TramInfo> tramInfoList) {
-        this.tramInfoList = tramInfoList;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
     }
 }

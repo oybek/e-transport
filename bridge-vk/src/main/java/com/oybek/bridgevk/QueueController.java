@@ -5,21 +5,24 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Подобие менеджера очередей
+ */
 @Component
 public class QueueController {
-    ConcurrentLinkedQueue<Message> queueToBot;
-    ConcurrentLinkedQueue<Message> queueFromBot;
+    private ConcurrentLinkedQueue<Message> queueToBot;
+    private ConcurrentLinkedQueue<Message> queueFromBot;
 
     public QueueController() {
         queueToBot = new ConcurrentLinkedQueue<>();
         queueFromBot = new ConcurrentLinkedQueue<>();
     }
 
-    public ConcurrentLinkedQueue<Message> getQueueToBot() {
+    ConcurrentLinkedQueue<Message> getQueueToBot() {
         return queueToBot;
     }
 
-    public ConcurrentLinkedQueue<Message> getQueueFromBot() {
+    ConcurrentLinkedQueue<Message> getQueueFromBot() {
         return queueFromBot;
     }
 }

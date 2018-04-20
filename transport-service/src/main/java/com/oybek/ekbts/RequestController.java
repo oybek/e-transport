@@ -3,7 +3,10 @@ package com.oybek.ekbts;
 import com.oybek.ekbts.entities.Result;
 import com.oybek.ekbts.entities.TramStop;
 import com.sun.javafx.geom.Vec2d;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class RequestController {
@@ -11,6 +14,7 @@ public class RequestController {
     private Ettu ettu;
     private Engine engine;
 
+    @Autowired
     public RequestController(Ettu ettu, Engine engine) {
         this.ettu = ettu;
         this.engine = engine;
@@ -22,8 +26,8 @@ public class RequestController {
     }
 
     @GetMapping(value = "/get_nearest")
-    public Result getNearest(@RequestParam("latitude") double latitude
-            , @RequestParam("longitude") double longitude ) {
+    public Result getNearest(@RequestParam("latitude") double latitude,
+                      @RequestParam("longitude") double longitude) {
         TramStop tramStop = engine.getNearest( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(tramStop);
