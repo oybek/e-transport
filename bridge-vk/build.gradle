@@ -42,7 +42,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.1'
     compile 'org.jfree:jfreesvg:3.3'
     compile 'org.jsoup:jsoup:1.11.1'
-    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.projectlombok:lombok:1.16.20'
 }
 
 bootRun {

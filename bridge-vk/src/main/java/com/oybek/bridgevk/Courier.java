@@ -4,112 +4,116 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.oybek.bridgevk.Entities.Geo;
 import com.oybek.bridgevk.Entities.Message;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.springframework.http.HttpHeaders.USER_AGENT;
 
 @Component
 public class Courier {
+    private static final String SEND_MESSAGE_URL = "https://api.vk.com/method/messages.send?v=3.0&user_id=%d&message=%s&access_token=%s";
+    private static final String GET_MESSAGE_URL = "https://api.vk.com/method/messages.get?last_message_id=%d&access_token=%s&v=3";
+    @Value("${artificialPing:1000}")
+    private long artificialPing;
     @Value("${vk.token}")
     private String accessToken;
-
-    private String sendMessageURL = "https://api.vk.com/method/messages.send?v=3.0&user_id=%d&message=%s&access_token=%s";
-    private String getMessageUrl = "https://api.vk.com/method/messages.get?last_message_id=%d&access_token=%s&v=3";
-
-    @Value("${artificialPing}")
-    private long artificialPing = 1000;
-
     private QueueController queueController;
 
-    private long lastMessageId = 0;
+    private AtomicLong lastMessageId = new AtomicLong(0);
 
-    public Courier( QueueController queueController ) {
-        this.queueController = queueController;
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                update();
-            }
-        }).start();
+    @Autowired
+    public Courier(QueueController controller) {
+        this.queueController = controller;
     }
 
-	// HTTP GET request
-	public static String get( String urlStr ) throws Exception {
+    /**
+     * Обработка GET-запроса на указанный адрес
+     *
+     * @param urlStr - адрес
+     * @return ответ в текстовом виде
+     * @throws IOException - имеется вероятность неудачи при обращении к API
+     */
+    public static String get(String urlStr) throws IOException {
 
-		URL obj = new URL( urlStr );
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        URL obj = new URL(urlStr);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-		// optional default is GET
-		con.setRequestMethod("GET");
+        // optional default is GET
+        con.setRequestMethod("GET");
 
-		//add request header
-		con.setRequestProperty("User-Agent", USER_AGENT);
+        //add request header
+        con.setRequestProperty("User-Agent", USER_AGENT);
 
-		int responseCode = con.getResponseCode();
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+        StringBuilder response = new StringBuilder();
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-		String inputLine;
-		StringBuffer response = new StringBuffer();
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
 
-		while ((inputLine = in.readLine()) != null) {
-			response.append(inputLine);
-		}
-		in.close();
-
-		// return result
         return response.toString();
-	}
+    }
 
+    /**
+     * Планирование выполнения периодического обновления после загрузки контекста приложения
+     */
+    @EventListener(classes = {ContextRefreshedEvent.class})
+    public void scheduleUpdate() {
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(this::update, 1000L, artificialPing, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Штатное обновление перечня сообщений
+     */
     private void update() {
-        while(true) {
-            try {
-                JsonParser parser = new JsonParser();
-                JsonObject o = parser.parse(get(String.format(getMessageUrl, lastMessageId, accessToken))).getAsJsonObject();
+        try {
+            JsonParser parser = new JsonParser();
+            JsonObject messageContent = parser.parse(get(String.format(GET_MESSAGE_URL, lastMessageId.get(), accessToken))).getAsJsonObject();
 
-                if (o.has("response")) {
-                    JsonArray arr = o.get("response").getAsJsonArray();
-                    for (JsonElement element : arr) {
-                        if (element.isJsonObject()) {
-                            JsonObject jObj = element.getAsJsonObject();
+            if (messageContent.has("response")) {
+                JsonArray arr = messageContent.get("response").getAsJsonArray();
+                for (JsonElement element : arr) {
+                    if (element.isJsonObject()) {
+                        JsonObject jObj = element.getAsJsonObject();
 
-                            Message msg = new Message(jObj);
+                        Message msg = new Message(jObj);
 
-                            lastMessageId = Math.max(lastMessageId, msg.getId());
+                        lastMessageId.set(Math.max(lastMessageId.get(), msg.getId()));
 
-                            if (msg.getReadState() == 0) {
-                                System.out.println(msg.toString());
-                                queueController.getQueueToBot().add(msg);
-                            }
+                        if (msg.getReadState() == 0) {
+                            System.out.println(msg.toString());
+                            queueController.getQueueToBot().add(msg);
                         }
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-
-            try {
-                Message message = queueController.getQueueFromBot().poll();
-                if (message != null) {
-                    get(String.format(sendMessageURL, message.getUid(), message.getText(), accessToken));
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            Message message = queueController.getQueueFromBot().poll();
+            if (message != null) {
+                get(String.format(SEND_MESSAGE_URL, message.getUid(), message.getText(), accessToken));
             }
-
-            try {
-                Thread.sleep(artificialPing);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
