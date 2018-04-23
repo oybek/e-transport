@@ -52,7 +52,8 @@ public class SuperBot {
                     StringBuilder answer = new StringBuilder();
 
                     if( msg.getGeo() == null ) {
-                        answer.append("Для того чтобы я мог определить остановку отправьте ее геопозицию, или вашу текущую если вы уже на остановке");
+                        answer.append("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:");
+                        msg.setAttachment("doc213461412_464462003");
                     } else {
                         JsonElement jsonElement = parser.parse(Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude())));
 
