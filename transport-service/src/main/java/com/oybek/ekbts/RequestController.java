@@ -27,7 +27,7 @@ public class RequestController {
         TramStop tramStop = engine.getNearest( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(tramStop);
-        result.setTramStopName(tramStop.getName() + " " + tramStop.getDirection());
+        result.setTramStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")" );
 
         return result;
     }
@@ -38,7 +38,7 @@ public class RequestController {
         TramStop tramStop = engine.getNearestToNearest( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(tramStop);
-        result.setTramStopName(tramStop.getName() + " " + tramStop.getDirection());
+        result.setTramStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")");
 
         return result;
     }

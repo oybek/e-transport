@@ -59,7 +59,7 @@ public class SuperBot {
                         if(jsonElement.getAsJsonObject().get("tramInfoList").isJsonNull()) {
                             answer.append("Извините, не удалось найти информацию о трамваях 😞");
                         } else {
-                            answer.append( "Ближайшая остановка: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
+                            answer.append( "🚋 Ближайшая остановка: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
                             JsonArray jsonArray = jsonElement.getAsJsonObject().get("tramInfoList").getAsJsonArray();
                             for (JsonElement element : jsonArray) {
                                 if (element.isJsonObject()) {
@@ -67,7 +67,7 @@ public class SuperBot {
 
                                     long timeToReach = jObj.get("timeReach").getAsLong();
                                     if( timeToReach == 0 ) {
-                                        answer.append(jObj.get("route").getAsString() + "-й трамвай будет меньше, чем через минуту\n" );
+                                        answer.append(jObj.get("route").getAsString() + "-й трамвай уже подъезжает\n" );
                                     }
                                     else {
                                         answer.append(jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " мин.\n");
@@ -83,7 +83,7 @@ public class SuperBot {
                             if( Double.parseDouble(requestResult) > farValue ) {
                                 jsonElement = parser.parse(Courier.get(String.format(urlGetNearestToNearest, msg.getGeo().getLatitude(), msg.getGeo().getLongitude())));
 
-                                answer.append( "\nДругое направление: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
+                                answer.append( "\n🚋 Другое направление: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
                                 jsonArray = jsonElement.getAsJsonObject().get("tramInfoList").getAsJsonArray();
                                 for (JsonElement element : jsonArray) {
                                     if (element.isJsonObject()) {
@@ -91,7 +91,7 @@ public class SuperBot {
 
                                         long timeToReach = jObj.get("timeReach").getAsLong();
                                         if( timeToReach == 0 ) {
-                                            answer.append(jObj.get("route").getAsString() + "-й трамвай будет меньше, чем через минуту\n" );
+                                            answer.append(jObj.get("route").getAsString() + "-й трамвай уже подъезжает\n" );
                                         }
                                         else {
                                             answer.append(jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " мин.\n");
