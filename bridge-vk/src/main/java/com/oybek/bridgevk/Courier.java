@@ -21,7 +21,7 @@ public class Courier {
     @Value("${vk.token}")
     private String accessToken;
 
-    private String sendMessageURL = "https://api.vk.com/method/messages.send?v=3.0&user_id=%d&message=%s&access_token=%s";
+    private String sendMessageURL = "https://api.vk.com/method/messages.send?v=3.0&user_id=%d&message=%s&attachment=%s&access_token=%s";
     private String getMessageUrl = "https://api.vk.com/method/messages.get?last_message_id=%d&access_token=%s&v=3";
 
     @Value("${artificialPing}")
@@ -99,7 +99,7 @@ public class Courier {
             try {
                 Message message = queueController.getQueueFromBot().poll();
                 if (message != null) {
-                    get(String.format(sendMessageURL, message.getUid(), message.getText(), accessToken));
+                    get(String.format(sendMessageURL, message.getUid(), message.getText(), message.getAttachment(), accessToken));
                 }
             } catch (Exception e) {
                 e.printStackTrace();

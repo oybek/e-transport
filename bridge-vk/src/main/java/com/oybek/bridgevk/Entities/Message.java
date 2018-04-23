@@ -3,6 +3,9 @@ package com.oybek.bridgevk.Entities;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Message {
     private long id;
     private long date;
@@ -10,6 +13,7 @@ public class Message {
     private long readState;
     private String text;
     private Geo geo;
+    private String attachment;
 
     public Message(long id, long date, long uid, long readState, String text, Geo geo) {
         this.id = id;
@@ -97,6 +101,14 @@ public class Message {
 
     public void setGeo(Geo geo) {
         this.geo = geo;
+    }
+
+    public String getAttachment() {
+        return attachment;
+    }
+
+    public void setAttachment(String attachment) {
+        this.attachment = attachment;
     }
 
     @Override
