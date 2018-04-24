@@ -1,6 +1,6 @@
 # What is project about?
 
-Tiny project, attempt to create chat-bot for [vk social network](vk.com), which provides information about trams coming to certain tram-stop in Ekaterinburg city.
+Tiny project, attempt to create chat-bot for [vk social network](https://vk.com), which provides information about trams coming to certain tram-stop in Ekaterinburg city.
 
 # Plans
 
