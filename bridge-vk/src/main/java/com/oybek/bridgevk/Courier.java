@@ -43,30 +43,33 @@ public class Courier {
     }
 
 	// HTTP GET request
-	public static String get( String urlStr ) throws Exception {
+	public static String get( String urlStr ) {
+        try {
+            URL obj = new URL(urlStr);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-		URL obj = new URL( urlStr );
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            // optional default is GET
+            con.setRequestMethod("GET");
 
-		// optional default is GET
-		con.setRequestMethod("GET");
+            //add request header
+            con.setRequestProperty("User-Agent", USER_AGENT);
 
-		//add request header
-		con.setRequestProperty("User-Agent", USER_AGENT);
+            int responseCode = con.getResponseCode();
 
-		int responseCode = con.getResponseCode();
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-		String inputLine;
-		StringBuffer response = new StringBuffer();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
 
-		while ((inputLine = in.readLine()) != null) {
-			response.append(inputLine);
-		}
-		in.close();
-
-		// return result
-        return response.toString();
+            return response.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
 	}
 
     private void update() {

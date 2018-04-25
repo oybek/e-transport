@@ -95,6 +95,10 @@ public class Message {
         this.text = text;
     }
 
+    public void appendText(String text) {
+        this.text = (this.text == null ? text : this.text.concat(text));
+    }
+
     public Geo getGeo() {
         return geo;
     }
