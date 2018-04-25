@@ -49,6 +49,10 @@ public class TramStopInfo {
         this.tramInfoList = tramInfoList;
     }
 
+    public Geo getGeo() {
+        return new Geo(latitude, longitude);
+    }
+
     public String getTextInfo() {
         // provide information
         StringBuffer answer = new StringBuffer();
