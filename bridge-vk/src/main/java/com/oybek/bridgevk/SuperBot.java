@@ -30,10 +30,9 @@ public class SuperBot {
     }
 
     // soon it will become class
-    private String getReaction(Message msg) {
+    // TODO: here must be only business logic
+    private Message getReaction(Message msg) {
         Gson gson = new Gson();
-
-        JsonParser parser = new JsonParser();
 
         StringBuilder answer = new StringBuilder();
 
@@ -81,13 +80,12 @@ public class SuperBot {
             }
         }
 
-        return answer.toString();
+        msg.setText(answer.toString());
+        return msg;
     }
 
-    // TODO: refactor this function, deserialize json before working with message
-    // very bad bad ... bad code
-    public void work() {
-        while( true ) {
+    public void work () {
+        while (true) {
             // if no work ...
             if (queueController.getQueueToBot().isEmpty()) {
                 // ... sleep 0.5 second
@@ -102,11 +100,11 @@ public class SuperBot {
                 Message msg = queueController.getQueueToBot().poll();
 
                 // get reaction of bot to message
-                String answer = getReaction(msg);
+                Message replyMsg = getReaction(msg);
 
                 // url encode bot's response
                 try {
-                    msg.setText(URLEncoder.encode(answer.toString(), "UTF-8"));
+                    replyMsg.setText(URLEncoder.encode(replyMsg.getText(), "UTF-8"));
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
