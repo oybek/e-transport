@@ -1,10 +1,9 @@
 package com.oybek.bridgevk;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.oybek.bridgevk.Entities.Message;
+import com.oybek.bridgevk.Entities.TramInfo;
+import com.oybek.bridgevk.Entities.TramStopInfo;
 import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;
@@ -33,6 +32,7 @@ public class SuperBot {
     // TODO: refactor this function, deserialize json before working with message
     // very bad bad ... bad code
     public void work() {
+        Gson gson = new Gson();
         while( true ) {
             // if no work ...
             if (queueController.getQueueToBot().isEmpty()) {
@@ -55,49 +55,41 @@ public class SuperBot {
                     answer.append("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:");
                     msg.setAttachment("doc-163915852_464149858");
                 } else {
-                    JsonElement jsonElement = parser.parse(Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude())));
+                    String response = Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()));
+                    TramStopInfo tramStopInfo = gson.fromJson(response, TramStopInfo.class);
 
-                    if(jsonElement.getAsJsonObject().get("tramInfoList").isJsonNull()) {
+                    if (tramStopInfo == null) {
                         answer.append("Извините, не удалось найти информацию о трамваях 😞");
                     } else {
-                        answer.append( "🚋 Ближайшая остановка: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
-                        JsonArray jsonArray = jsonElement.getAsJsonObject().get("tramInfoList").getAsJsonArray();
-                        for (JsonElement element : jsonArray) {
-                            if (element.isJsonObject()) {
-                                JsonObject jObj = element.getAsJsonObject();
+                        answer.append(String.format("🚋 Ближайшая остановка: %s\n", tramStopInfo.getTramStopName()));
 
-                                long timeToReach = jObj.get("timeReach").getAsLong();
-                                if( timeToReach == 0 ) {
-                                    answer.append(jObj.get("route").getAsString() + "-й трамвай уже подъезжает\n" );
-                                }
-                                else {
-                                    answer.append(jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " мин.\n");
-                                }
-                            }
+                        for (TramInfo tramInfo : tramStopInfo.getTramInfoList()) {
+                            long timeToReach = Long.parseLong(tramInfo.getTimeReach());
+                            answer.append(
+                                timeToReach == 0
+                                        ? tramInfo.getRoute() + "-й трамвай уже подъезжает\n"
+                                        : tramInfo.getRoute() + "-й трамвай будет через " + tramInfo.getTimeReach() + " мин.\n"
+                            );
                         }
 
-                        double nearestTramStopLatitude = jsonElement.getAsJsonObject().get("latitude").getAsDouble();
-                        double nearestTramStopLongitude = jsonElement.getAsJsonObject().get("longitude").getAsDouble();
+                        double nearestTramStopLatitude = tramStopInfo.getLatitude();
+                        double nearestTramStopLongitude = tramStopInfo.getLongitude();
 
                         String requestResult = Courier.get(String.format(urlGetDistance, msg.getGeo().getLatitude(), msg.getGeo().getLongitude(), nearestTramStopLatitude, nearestTramStopLongitude));
                         final double farValue = 25.0;
                         if( Double.parseDouble(requestResult) > farValue ) {
-                            jsonElement = parser.parse(Courier.get(String.format(urlGetNearestToNearest, msg.getGeo().getLatitude(), msg.getGeo().getLongitude())));
+                            response = Courier.get(String.format(urlGetNearestToNearest, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()));
+                            TramStopInfo tramStop2Info = gson.fromJson(response, TramStopInfo.class);
 
-                            answer.append( "\n🚋 Другое направление: " + jsonElement.getAsJsonObject().get("tramStopName").getAsString() + "\n" );
-                            jsonArray = jsonElement.getAsJsonObject().get("tramInfoList").getAsJsonArray();
-                            for (JsonElement element : jsonArray) {
-                                if (element.isJsonObject()) {
-                                    JsonObject jObj = element.getAsJsonObject();
+                            answer.append(String.format("🚋 Другое направление: %s\n", tramStop2Info.getTramStopName()));
 
-                                    long timeToReach = jObj.get("timeReach").getAsLong();
-                                    if( timeToReach == 0 ) {
-                                        answer.append(jObj.get("route").getAsString() + "-й трамвай уже подъезжает\n" );
-                                    }
-                                    else {
-                                        answer.append(jObj.get("route").getAsString() + "-й трамвай будет через " + jObj.get("timeReach").getAsString() + " мин.\n");
-                                    }
-                                }
+                            for (TramInfo tramInfo : tramStop2Info.getTramInfoList()) {
+                                long timeToReach = Long.parseLong(tramInfo.getTimeReach());
+                                answer.append(
+                                        timeToReach == 0
+                                                ? tramInfo.getRoute() + "-й трамвай уже подъезжает\n"
+                                                : tramInfo.getRoute() + "-й трамвай будет через " + tramInfo.getTimeReach() + " мин.\n"
+                                );
                             }
                         }
                     }
