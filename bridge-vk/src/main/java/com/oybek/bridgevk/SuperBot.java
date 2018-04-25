@@ -32,56 +32,45 @@ public class SuperBot {
     // soon it will become class
     // TODO: here must be only business logic
     private Message getReaction(Message msg) {
+        // TODO: override clone method and work with clone
+        Message replyMsg = msg;
+
         Gson gson = new Gson();
 
         StringBuilder answer = new StringBuilder();
 
+        // no geolocation provided
         if( msg.getGeo() == null ) {
-            answer.append("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:");
-            msg.setAttachment("doc-163915852_464149858");
-        } else {
-            String response = Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()));
-            TramStopInfo tramStopInfo = gson.fromJson(response, TramStopInfo.class);
-
-            if (tramStopInfo == null) {
-                answer.append("Извините, не удалось найти информацию о трамваях 😞");
-            } else {
-                answer.append(String.format("🚋 Ближайшая остановка: %s\n", tramStopInfo.getTramStopName()));
-
-                for (TramInfo tramInfo : tramStopInfo.getTramInfoList()) {
-                    long timeToReach = Long.parseLong(tramInfo.getTimeReach());
-                    answer.append(
-                            timeToReach == 0
-                                    ? tramInfo.getRoute() + "-й трамвай уже подъезжает\n"
-                                    : tramInfo.getRoute() + "-й трамвай будет через " + tramInfo.getTimeReach() + " мин.\n"
-                    );
-                }
-
-                double nearestTramStopLatitude = tramStopInfo.getLatitude();
-                double nearestTramStopLongitude = tramStopInfo.getLongitude();
-
-                String requestResult = Courier.get(String.format(urlGetDistance, msg.getGeo().getLatitude(), msg.getGeo().getLongitude(), nearestTramStopLatitude, nearestTramStopLongitude));
-                final double farValue = 25.0;
-                if( Double.parseDouble(requestResult) > farValue ) {
-                    response = Courier.get(String.format(urlGetNearestToNearest, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()));
-                    TramStopInfo tramStop2Info = gson.fromJson(response, TramStopInfo.class);
-
-                    answer.append(String.format("🚋 Другое направление: %s\n", tramStop2Info.getTramStopName()));
-
-                    for (TramInfo tramInfo : tramStop2Info.getTramInfoList()) {
-                        long timeToReach = Long.parseLong(tramInfo.getTimeReach());
-                        answer.append(
-                                timeToReach == 0
-                                        ? tramInfo.getRoute() + "-й трамвай уже подъезжает\n"
-                                        : tramInfo.getRoute() + "-й трамвай будет через " + tramInfo.getTimeReach() + " мин.\n"
-                        );
-                    }
-                }
-            }
+            replyMsg.setText("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:");
+            replyMsg.setAttachment("doc-163915852_464149858");
+            return replyMsg;
         }
 
-        msg.setText(answer.toString());
-        return msg;
+        // get info about tram stop
+        String response = Courier.get(String.format(url, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()));
+        TramStopInfo tramStopInfo = gson.fromJson(response, TramStopInfo.class);
+
+        if (tramStopInfo == null) {
+            replyMsg.setText("Извините, не удалось найти информацию о трамваях 😞");
+            return replyMsg;
+        }
+
+        // provide information
+        replyMsg.setText("🚋 Ближайшая остановка: " + tramStopInfo.getTextInfo());
+
+        double nearestTramStopLatitude = tramStopInfo.getLatitude();
+        double nearestTramStopLongitude = tramStopInfo.getLongitude();
+
+        String requestResult = Courier.get(String.format(urlGetDistance, msg.getGeo().getLatitude(), msg.getGeo().getLongitude(), nearestTramStopLatitude, nearestTramStopLongitude));
+        final double farValue = 25.0;
+        if( Double.parseDouble(requestResult) > farValue ) {
+            response = Courier.get(String.format(urlGetNearestToNearest, msg.getGeo().getLatitude(), msg.getGeo().getLongitude()));
+            TramStopInfo tramStop2Info = gson.fromJson(response, TramStopInfo.class);
+
+            replyMsg.appendText("\n🚋 Другое направление: " + tramStop2Info.getTextInfo());
+        }
+
+        return replyMsg;
     }
 
     public void work () {

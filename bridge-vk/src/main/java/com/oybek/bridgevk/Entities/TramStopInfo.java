@@ -49,6 +49,23 @@ public class TramStopInfo {
         this.tramInfoList = tramInfoList;
     }
 
+    public String getTextInfo() {
+        // provide information
+        StringBuffer answer = new StringBuffer();
+
+        answer.append(String.format(getTramStopName() + "\n"));
+
+        for (TramInfo tramInfo : getTramInfoList()) {
+            long timeToReach = Long.parseLong(tramInfo.getTimeReach());
+            answer.append(
+                    timeToReach == 0
+                            ? tramInfo.getRoute() + "-й трамвай уже подъезжает\n"
+                            : tramInfo.getRoute() + "-й трамвай будет через " + tramInfo.getTimeReach() + " мин.\n"
+            );
+        }
+        return answer.toString();
+    }
+
     @Override
     public String toString() {
         return "TramStopInfo{" +
