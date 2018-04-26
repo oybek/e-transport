@@ -72,8 +72,8 @@ public class StopInfo {
             }
             else if (stopType.equals("troll")) {
                 answer.append( timeToReach == 0
-                        ? String.format("%s-й тролейбус уже подъезжает\n", transportInfo.getRoute())
-                        : String.format("%s-й тролейбус будет через %s мин.\n", transportInfo.getRoute(), transportInfo.getTimeReach())
+                        ? String.format("%s-й троллейбус уже подъезжает\n", transportInfo.getRoute())
+                        : String.format("%s-й троллейбус будет через %s мин.\n", transportInfo.getRoute(), transportInfo.getTimeReach())
                 );
             }
         }
