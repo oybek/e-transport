@@ -21,8 +21,30 @@ public class RequestController {
         return "ok";
     }
 
+    @GetMapping(value = "/troll_stops/get_nearest")
+    public Result getNearestTrollStop(@RequestParam("latitude") double latitude
+            , @RequestParam("longitude") double longitude ) {
+        Stop trollStop = engine.getNearestTrollStop( new Vec2d( latitude, longitude ) );
+
+        Result result = ettu.getInfo(trollStop);
+        result.setTramStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")" );
+
+        return result;
+    }
+
+    @GetMapping(value = "/troll_stops/get_nearest_to_nearest")
+    public Result getNearestToNearestTrollStop(@RequestParam("latitude") double latitude
+            , @RequestParam("longitude") double longitude ) {
+        Stop trollStop = engine.getNearestToNearestTrollStop( new Vec2d( latitude, longitude ) );
+
+        Result result = ettu.getInfo(trollStop);
+        result.setTramStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")");
+
+        return result;
+    }
+
     @GetMapping(value = "/tram_stops/get_nearest")
-    public Result getNearest(@RequestParam("latitude") double latitude
+    public Result getNearestTramStop(@RequestParam("latitude") double latitude
             , @RequestParam("longitude") double longitude ) {
         Stop tramStop = engine.getNearestTramStop( new Vec2d( latitude, longitude ) );
 
