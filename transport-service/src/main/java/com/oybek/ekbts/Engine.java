@@ -1,7 +1,7 @@
 package com.oybek.ekbts;
 
 import com.google.gson.Gson;
-import com.oybek.ekbts.entities.TramStop;
+import com.oybek.ekbts.entities.Stop;
 import com.sun.javafx.geom.Vec2d;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,14 +11,14 @@ import java.util.Arrays;
 
 @RestController
 public class Engine {
-    ArrayList<TramStop> tramStops;
+    ArrayList<Stop> tramStops;
 
     public Engine() {
         Gson gson = new Gson();
 
         try (Reader reader = new FileReader(getResourceFile("json/tram-stops.json"))) {
             // Convert JSON to Java Object
-            TramStop[] tramStopsRaw = gson.fromJson(reader, TramStop[].class);
+            Stop[] tramStopsRaw = gson.fromJson(reader, Stop[].class);
             tramStops = new ArrayList<>(Arrays.asList(tramStopsRaw));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -27,14 +27,14 @@ public class Engine {
         }
     }
 
-    public TramStop getNearest(Vec2d coord) {
+    public Stop getNearest(Vec2d coord) {
         if (tramStops.size() == 0) {
             System.out.println("No single tram stop given");
             return null;
         }
 
-        TramStop nearestTramStop = tramStops.get(0);
-        for (TramStop currentTramStop : tramStops) {
+        Stop nearestTramStop = tramStops.get(0);
+        for (Stop currentTramStop : tramStops) {
             if (coord.distanceSq(currentTramStop.getLatitude(), currentTramStop.getLongitude())
                     < coord.distanceSq(nearestTramStop.getLatitude(), nearestTramStop.getLongitude())) {
                 nearestTramStop = currentTramStop;
@@ -60,23 +60,23 @@ public class Engine {
         return Math.sqrt(distance);
     }
 
-    public TramStop getNearestToNearest(Vec2d coord) {
-        TramStop target = getNearest(coord);
+    public Stop getNearestToNearest(Vec2d coord) {
+        Stop target = getNearest(coord);
         if( target == null ) {
             System.out.println("No single tram stop given");
             return null;
         }
 
-        TramStop nearestToNearest = null;
+        Stop nearestToNearest = null;
 
         // choose first not target
-        for (TramStop current : tramStops) {
+        for (Stop current : tramStops) {
             if (current.getId().equals(target.getId()) == false)
                 nearestToNearest = current;
         }
 
 
-        for (TramStop current : tramStops) {
+        for (Stop current : tramStops) {
             if( nearestToNearest == null ) {
                 nearestToNearest = current;
                 continue;
@@ -99,7 +99,7 @@ public class Engine {
         return new File(classLoader.getResource(fileName).getFile());
     }
 
-    private double distance( TramStop stop1, TramStop stop2 ) {
+    private double distance(Stop stop1, Stop stop2 ) {
         if( stop1 == null || stop2 == null ) {
             return 0.0f;
         }

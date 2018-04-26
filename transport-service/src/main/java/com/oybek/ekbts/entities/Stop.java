@@ -3,7 +3,7 @@ package com.oybek.ekbts.entities;
 import com.google.gson.annotations.SerializedName;
 import com.sun.javafx.geom.Vec2d;
 
-public class TramStop {
+public class Stop {
     @SerializedName("ID")
     private String id;
 
@@ -101,7 +101,7 @@ public class TramStop {
 
     @Override
     public String toString() {
-        return "TramStop{" +
+        return "Stop{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", note='" + note + '\'' +
