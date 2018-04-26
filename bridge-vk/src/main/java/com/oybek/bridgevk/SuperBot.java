@@ -1,9 +1,7 @@
 package com.oybek.bridgevk;
 
-import com.google.gson.*;
 import com.oybek.bridgevk.Entities.Message;
-import com.oybek.bridgevk.Entities.TramInfo;
-import com.oybek.bridgevk.Entities.TramStopInfo;
+import com.oybek.bridgevk.Entities.StopInfo;
 import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;
@@ -40,7 +38,7 @@ public class SuperBot {
         }
 
         // get info about tram stop
-        TramStopInfo tramStopInfo = ettu.getNearest(msg.getGeo());
+        StopInfo tramStopInfo = ettu.getNearestTramStop(msg.getGeo());
 
         if (tramStopInfo == null) {
             replyMsg.setText("Извините, не удалось найти информацию о трамваях 😞");
@@ -51,7 +49,7 @@ public class SuperBot {
         replyMsg.setText("🚋 Ближайшая остановка: " + tramStopInfo.getTextInfo());
 
         if (ettu.getDistance(tramStopInfo.getGeo(), msg.getGeo()) > 25.0) {
-            TramStopInfo tramStop2Info = ettu.getNearestToNearest(msg.getGeo());
+            StopInfo tramStop2Info = ettu.getNearestToNearestTramStop(msg.getGeo());
             replyMsg.appendText("\n🚋 Другое направление: " + tramStop2Info.getTextInfo());
         }
 

@@ -4,7 +4,10 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public class TramStopInfo {
+public class StopInfo {
+    @SerializedName("stopType")
+    private String stopType;
+
     @SerializedName("tramStopName")
     private String tramStopName;
 
@@ -14,8 +17,8 @@ public class TramStopInfo {
     @SerializedName("longitude")
     private double longitude;
 
-    @SerializedName("tramInfoList")
-    private List<TramInfo> tramInfoList;
+    @SerializedName("transportInfoList")
+    private List<TransportInfo> transportInfoList;
 
     public String getTramStopName() {
         return tramStopName;
@@ -41,30 +44,30 @@ public class TramStopInfo {
         this.longitude = longitude;
     }
 
-    public List<TramInfo> getTramInfoList() {
-        return tramInfoList;
+    public List<TransportInfo> getTransportInfoList() {
+        return transportInfoList;
     }
 
-    public void setTramInfoList(List<TramInfo> tramInfoList) {
-        this.tramInfoList = tramInfoList;
+    public void setTransportInfoList(List<TransportInfo> transportInfoList) {
+        this.transportInfoList = transportInfoList;
     }
 
     public Geo getGeo() {
         return new Geo(latitude, longitude);
     }
 
-    public String getTextInfo() {
+    public String getTextInfo(String transportType) {
         // provide information
         StringBuffer answer = new StringBuffer();
 
         answer.append(String.format(getTramStopName() + "\n"));
 
-        for (TramInfo tramInfo : getTramInfoList()) {
-            long timeToReach = Long.parseLong(tramInfo.getTimeReach());
+        for (TransportInfo transportInfo : getTransportInfoList()) {
+            long timeToReach = Long.parseLong(transportInfo.getTimeReach());
             answer.append(
                     timeToReach == 0
-                            ? tramInfo.getRoute() + "-й трамвай уже подъезжает\n"
-                            : tramInfo.getRoute() + "-й трамвай будет через " + tramInfo.getTimeReach() + " мин.\n"
+                            ? String.format("%s-й %s уже подъезжает\n", transportInfo.getRoute(), transportType)
+                            : String.format("%s-й %s будет через %s мин.\n", transportInfo.getRoute(), transportType, transportInfo.getTimeReach())
             );
         }
         return answer.toString();
@@ -72,11 +75,11 @@ public class TramStopInfo {
 
     @Override
     public String toString() {
-        return "TramStopInfo{" +
-                "tramStopName='" + tramStopName + '\'' +
+        return "StopInfo{" +
+                "stopName='" + tramStopName + '\'' +
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
-                ", tramInfoList=" + tramInfoList +
+                ", transportInfoList=" + transportInfoList +
                 '}';
     }
 }
