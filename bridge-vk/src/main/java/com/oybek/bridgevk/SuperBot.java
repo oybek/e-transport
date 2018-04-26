@@ -38,18 +38,18 @@ public class SuperBot {
         }
 
         // get info about tram stop
-        StopInfo tramStopInfo = ettu.getNearestTramStop(msg.getGeo());
+        StopInfo stopInfo = ettu.getNearestTrollStop(msg.getGeo());
 
-        if (tramStopInfo == null) {
+        if (stopInfo == null) {
             replyMsg.setText("Извините, не удалось найти информацию о трамваях 😞");
             return replyMsg;
         }
 
         // provide information
-        replyMsg.setText("🚋 Ближайшая остановка: " + tramStopInfo.getTextInfo());
+        replyMsg.setText("🚋 Ближайшая остановка: " + stopInfo.getTextInfo());
 
-        if (ettu.getDistance(tramStopInfo.getGeo(), msg.getGeo()) > 25.0) {
-            StopInfo tramStop2Info = ettu.getNearestToNearestTramStop(msg.getGeo());
+        if (ettu.getDistance(stopInfo.getGeo(), msg.getGeo()) > 25.0) {
+            StopInfo tramStop2Info = ettu.getNearestToNearestTrollStop(msg.getGeo());
             replyMsg.appendText("\n🚋 Другое направление: " + tramStop2Info.getTextInfo());
         }
 

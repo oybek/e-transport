@@ -22,10 +22,10 @@ public class Ettu {
         gson = new Gson();
     }
 
-    // returns information about nearest tramStop to getPos
-    public StopInfo getNearestTramStop(Geo geo) {
+    //
+    private StopInfo get(String url, Geo geo) {
         if (geo != null) {
-            String response = Courier.get(String.format(urlGetNearestTramStop, geo.getLatitude(), geo.getLongitude()));
+            String response = Courier.get(String.format(url, geo.getLatitude(), geo.getLongitude()));
             StopInfo tramStopInfo = gson.fromJson(response, StopInfo.class);
             return tramStopInfo;
         } else {
@@ -33,15 +33,20 @@ public class Ettu {
         }
     }
 
-    // returns information about nearest tramStop to getPos
+    public StopInfo getNearestTramStop(Geo geo) {
+        return get(urlGetNearestTramStop, geo);
+    }
+
     public StopInfo getNearestToNearestTramStop(Geo geo) {
-        if (geo != null) {
-            String response = Courier.get(String.format(urlGetNearestToNearestTramStop, geo.getLatitude(), geo.getLongitude()));
-            StopInfo tramStopInfo = gson.fromJson(response, StopInfo.class);
-            return tramStopInfo;
-        } else {
-            return null;
-        }
+        return get(urlGetNearestToNearestTramStop, geo);
+    }
+
+    public StopInfo getNearestTrollStop(Geo geo) {
+        return get(urlGetNearestTrollStop, geo);
+    }
+
+    public StopInfo getNearestToNearestTrollStop(Geo geo) {
+        return get(urlGetNearestToNearestTrollStop, geo);
     }
 
     //

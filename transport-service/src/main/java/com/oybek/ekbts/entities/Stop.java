@@ -97,7 +97,7 @@ public class Stop {
 
     public void setDirection(String direction) { this.direction = direction; }
 
-    public Vec2d getCoord() { return new Vec2d(lat, lon); }
+    public Vec2d getCoord() { return new Vec2d(latitude, longitude); }
 
     @Override
     public String toString() {

@@ -27,7 +27,8 @@ public class RequestController {
         Stop trollStop = engine.getNearestTrollStop( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(trollStop);
-        result.setTramStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")" );
+        result.setStopType("troll");
+        result.setStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")" );
 
         return result;
     }
@@ -38,7 +39,8 @@ public class RequestController {
         Stop trollStop = engine.getNearestToNearestTrollStop( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(trollStop);
-        result.setTramStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")");
+        result.setStopType("troll");
+        result.setStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")");
 
         return result;
     }
@@ -49,7 +51,8 @@ public class RequestController {
         Stop tramStop = engine.getNearestTramStop( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(tramStop);
-        result.setTramStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")" );
+        result.setStopType("tram");
+        result.setStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")" );
 
         return result;
     }
@@ -60,7 +63,8 @@ public class RequestController {
         Stop tramStop = engine.getNearestToNearestTramStop( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(tramStop);
-        result.setTramStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")");
+        result.setStopType("tram");
+        result.setStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")");
 
         return result;
     }

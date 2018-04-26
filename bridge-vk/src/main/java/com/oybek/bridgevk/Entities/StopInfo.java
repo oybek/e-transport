@@ -8,8 +8,8 @@ public class StopInfo {
     @SerializedName("stopType")
     private String stopType;
 
-    @SerializedName("tramStopName")
-    private String tramStopName;
+    @SerializedName("stopName")
+    private String stopName;
 
     @SerializedName("latitude")
     private double latitude;
@@ -20,12 +20,12 @@ public class StopInfo {
     @SerializedName("transportInfoList")
     private List<TransportInfo> transportInfoList;
 
-    public String getTramStopName() {
-        return tramStopName;
+    public String getStopName() {
+        return stopName;
     }
 
-    public void setTramStopName(String tramStopName) {
-        this.tramStopName = tramStopName;
+    public void setStopName(String stopName) {
+        this.stopName = stopName;
     }
 
     public double getLatitude() {
@@ -56,19 +56,26 @@ public class StopInfo {
         return new Geo(latitude, longitude);
     }
 
-    public String getTextInfo(String transportType) {
+    public String getTextInfo() {
         // provide information
         StringBuffer answer = new StringBuffer();
 
-        answer.append(String.format(getTramStopName() + "\n"));
+        answer.append(String.format(getStopName() + "\n"));
 
         for (TransportInfo transportInfo : getTransportInfoList()) {
             long timeToReach = Long.parseLong(transportInfo.getTimeReach());
-            answer.append(
-                    timeToReach == 0
-                            ? String.format("%s-й %s уже подъезжает\n", transportInfo.getRoute(), transportType)
-                            : String.format("%s-й %s будет через %s мин.\n", transportInfo.getRoute(), transportType, transportInfo.getTimeReach())
-            );
+            if (stopType.equals("tram")) {
+                answer.append( timeToReach == 0
+                        ? String.format("%s-й трамвай уже подъезжает\n", transportInfo.getRoute())
+                        : String.format("%s-й трамвай будет через %s мин.\n", transportInfo.getRoute(), transportInfo.getTimeReach())
+                );
+            }
+            else if (stopType.equals("troll")) {
+                answer.append( timeToReach == 0
+                        ? String.format("%s-й тролейбус уже подъезжает\n", transportInfo.getRoute())
+                        : String.format("%s-й тролейбус будет через %s мин.\n", transportInfo.getRoute(), transportInfo.getTimeReach())
+                );
+            }
         }
         return answer.toString();
     }
@@ -76,7 +83,7 @@ public class StopInfo {
     @Override
     public String toString() {
         return "StopInfo{" +
-                "stopName='" + tramStopName + '\'' +
+                "stopName='" + stopName + '\'' +
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
                 ", transportInfoList=" + transportInfoList +

@@ -89,8 +89,8 @@ public class Engine {
     }
 
     private Stop getNearest(List<Stop> stops, Vec2d coord) {
-        if (tramStops.size() == 0) {
-            System.out.println("No single tram stop given");
+        if (stops == null || stops.size() == 0) {
+            System.out.println("No single stop given");
             return null;
         }
 
@@ -107,20 +107,20 @@ public class Engine {
     private Stop getNearestToNearest(List<Stop> stops, Vec2d coord) {
         Stop target = getNearest(stops, coord);
         if( target == null ) {
-            System.out.println("No single tram stop given");
+            System.out.println("No single stop given");
             return null;
         }
 
         Stop nearestToNearest = null;
 
         // choose first not target
-        for (Stop current : tramStops) {
+        for (Stop current : stops) {
             if (current.getId().equals(target.getId()) == false)
                 nearestToNearest = current;
         }
 
 
-        for (Stop current : tramStops) {
+        for (Stop current : stops) {
             if( nearestToNearest == null ) {
                 nearestToNearest = current;
                 continue;
