@@ -9,13 +9,13 @@ import org.springframework.stereotype.Component;
 public class Ettu {
     Gson gson;
 
-    private final String urlGetNearestTramStop = "http://localhost:9009/tram_stops/get_nearest?latitude=%f&longitude=%f";
-    private final String urlGetNearestToNearestTramStop = "http://localhost:9009/tram_stops/get_nearest_to_nearest?latitude=%f&longitude=%f";
+    private final String urlGetNearestTramStop = "http://localhost:9100/tram_stops/get_nearest?latitude=%f&longitude=%f";
+    private final String urlGetNearestToNearestTramStop = "http://localhost:9100/tram_stops/get_nearest_to_nearest?latitude=%f&longitude=%f";
 
-    private final String urlGetNearestTrollStop = "http://localhost:9009/troll_stops/get_nearest?latitude=%f&longitude=%f";
-    private final String urlGetNearestToNearestTrollStop = "http://localhost:9009/troll_stops/get_nearest_to_nearest?latitude=%f&longitude=%f";
+    private final String urlGetNearestTrollStop = "http://localhost:9100/troll_stops/get_nearest?latitude=%f&longitude=%f";
+    private final String urlGetNearestToNearestTrollStop = "http://localhost:9100/troll_stops/get_nearest_to_nearest?latitude=%f&longitude=%f";
 
-    private final String urlGetDistance = "http://localhost:9009/get_distance?lat1=%f&lon1=%f&lat2=%f&lon2=%f";
+    private final String urlGetDistance = "http://localhost:9100/get_distance?lat1=%f&lon1=%f&lat2=%f&lon2=%f";
 
 
     Ettu() {
