@@ -1,7 +1,7 @@
 package com.oybek.ekbts;
 
 import com.oybek.ekbts.entities.Result;
-import com.oybek.ekbts.entities.TramStop;
+import com.oybek.ekbts.entities.Stop;
 import com.sun.javafx.geom.Vec2d;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,24 +21,50 @@ public class RequestController {
         return "ok";
     }
 
-    @GetMapping(value = "/get_nearest")
-    public Result getNearest(@RequestParam("latitude") double latitude
+    @GetMapping(value = "/troll_stops/get_nearest")
+    public Result getNearestTrollStop(@RequestParam("latitude") double latitude
             , @RequestParam("longitude") double longitude ) {
-        TramStop tramStop = engine.getNearest( new Vec2d( latitude, longitude ) );
+        Stop trollStop = engine.getNearestTrollStop( new Vec2d( latitude, longitude ) );
 
-        Result result = ettu.getInfo(tramStop);
-        result.setTramStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")" );
+        Result result = ettu.getInfo(trollStop);
+        result.setStopType("troll");
+        result.setStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")" );
 
         return result;
     }
 
-    @GetMapping(value = "/get_nearest_to_nearest")
-    public Result getNearestToNearest(@RequestParam("latitude") double latitude
+    @GetMapping(value = "/troll_stops/get_nearest_to_nearest")
+    public Result getNearestToNearestTrollStop(@RequestParam("latitude") double latitude
             , @RequestParam("longitude") double longitude ) {
-        TramStop tramStop = engine.getNearestToNearest( new Vec2d( latitude, longitude ) );
+        Stop trollStop = engine.getNearestToNearestTrollStop( new Vec2d( latitude, longitude ) );
+
+        Result result = ettu.getInfo(trollStop);
+        result.setStopType("troll");
+        result.setStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")");
+
+        return result;
+    }
+
+    @GetMapping(value = "/tram_stops/get_nearest")
+    public Result getNearestTramStop(@RequestParam("latitude") double latitude
+            , @RequestParam("longitude") double longitude ) {
+        Stop tramStop = engine.getNearestTramStop( new Vec2d( latitude, longitude ) );
 
         Result result = ettu.getInfo(tramStop);
-        result.setTramStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")");
+        result.setStopType("tram");
+        result.setStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")" );
+
+        return result;
+    }
+
+    @GetMapping(value = "/tram_stops/get_nearest_to_nearest")
+    public Result getNearestToNearest(@RequestParam("latitude") double latitude
+            , @RequestParam("longitude") double longitude ) {
+        Stop tramStop = engine.getNearestToNearestTramStop( new Vec2d( latitude, longitude ) );
+
+        Result result = ettu.getInfo(tramStop);
+        result.setStopType("tram");
+        result.setStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")");
 
         return result;
     }

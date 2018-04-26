@@ -1,8 +1,8 @@
 package com.oybek.ekbts;
 
 import com.oybek.ekbts.entities.Result;
+import com.oybek.ekbts.entities.Stop;
 import com.oybek.ekbts.entities.TramInfo;
-import com.oybek.ekbts.entities.TramStop;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -14,13 +14,13 @@ import java.util.List;
 
 @RestController
 public class Ettu {
-    String baseUrl = "http://m.ettu.ru/station/";
+    private final String baseUrl = "http://m.ettu.ru/station/";
 
-    public Result getInfo(TramStop tramStop) {
+    public Result getInfo(Stop stop) {
         // JSoup Example 2 - Reading HTML page from URL
         Document doc;
         try {
-            String id = tramStop.getId();
+            String id = stop.getId();
             if (id != null) {
                 doc = Jsoup.connect(baseUrl + id).get();
 
@@ -39,8 +39,8 @@ public class Ettu {
                 }
 
                 Result result = new Result(tramInfos);
-                result.setLatitude(tramStop.getLatitude());
-                result.setLongitude(tramStop.getLongitude());
+                result.setLatitude(stop.getLatitude());
+                result.setLongitude(stop.getLongitude());
                 return result;
             }
         } catch (IOException e) {

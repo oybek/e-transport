@@ -1,33 +1,40 @@
 package com.oybek.ekbts.entities;
 
-import com.oybek.ekbts.entities.TramInfo;
-
 import java.util.List;
 
 public class Result {
-    private String tramStopName;
+    private String stopType;
+    private String stopName;
     private double latitude;
     private double longitude;
-    private List<TramInfo> tramInfoList;
+    private List<TramInfo> transportInfoList;
 
-    public Result(List<TramInfo> tramInfoList) {
-        this.tramInfoList = tramInfoList;
+    public Result(List<TramInfo> transportInfoList) {
+        this.transportInfoList = transportInfoList;
     }
 
-    public String getTramStopName() {
-        return tramStopName;
+    public String getStopName() {
+        return stopName;
     }
 
-    public void setTramStopName(String tramStopName) {
-        this.tramStopName = tramStopName;
+    public void setStopName(String stopName) {
+        this.stopName = stopName;
     }
 
-    public List<TramInfo> getTramInfoList() {
-        return tramInfoList;
+    public List<TramInfo> getTransportInfoList() {
+        return transportInfoList;
     }
 
-    public void setTramInfoList(List<TramInfo> tramInfoList) {
-        this.tramInfoList = tramInfoList;
+    public void setTransportInfoList(List<TramInfo> transportInfoList) {
+        this.transportInfoList = transportInfoList;
+    }
+
+    public String getStopType() {
+        return stopType;
+    }
+
+    public void setStopType(String stopType) {
+        this.stopType = stopType;
     }
 
     public double getLatitude() {

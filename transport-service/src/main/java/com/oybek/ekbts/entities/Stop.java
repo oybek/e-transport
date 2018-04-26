@@ -3,7 +3,7 @@ package com.oybek.ekbts.entities;
 import com.google.gson.annotations.SerializedName;
 import com.sun.javafx.geom.Vec2d;
 
-public class TramStop {
+public class Stop {
     @SerializedName("ID")
     private String id;
 
@@ -97,11 +97,11 @@ public class TramStop {
 
     public void setDirection(String direction) { this.direction = direction; }
 
-    public Vec2d getCoord() { return new Vec2d(lat, lon); }
+    public Vec2d getCoord() { return new Vec2d(latitude, longitude); }
 
     @Override
     public String toString() {
-        return "TramStop{" +
+        return "Stop{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", note='" + note + '\'' +

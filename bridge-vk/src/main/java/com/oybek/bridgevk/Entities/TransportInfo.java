@@ -2,7 +2,7 @@ package com.oybek.bridgevk.Entities;
 
 import com.google.gson.annotations.SerializedName;
 
-public class TramInfo {
+public class TransportInfo {
     @SerializedName("route")
     private String route;
 
@@ -38,7 +38,7 @@ public class TramInfo {
 
     @Override
     public String toString() {
-        return "TramInfo{" +
+        return "TransportInfo{" +
                 "route='" + route + '\'' +
                 ", timeReach='" + timeReach + '\'' +
                 ", distanceReach='" + distanceReach + '\'' +
