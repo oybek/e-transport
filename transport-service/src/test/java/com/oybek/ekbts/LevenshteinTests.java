@@ -39,4 +39,10 @@ public class LevenshteinTests extends TestCase {
         assertEquals( Levenshtein.calc( "горьково", "Горького" ) , 2 );
         assertEquals( Levenshtein.calc( "грьково", "Горького" ) , 3 );
     }
+
+    @Test
+    public void testOfLesha() {
+        assertEquals( Levenshtein.calc( "lord666", "orda777" ), 5 );
+        assertEquals( Levenshtein.calc( "aaaaaa", "aaabaaa" ), 1 );
+    }
 }

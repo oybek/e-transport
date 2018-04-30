@@ -1,5 +1,6 @@
 package com.oybek.ekbts;
 
+import com.oybek.ekbts.algorithms.Levenshtein;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
