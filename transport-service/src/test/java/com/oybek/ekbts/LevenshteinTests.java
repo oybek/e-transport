@@ -11,13 +11,15 @@ public class LevenshteinTests extends TestCase {
     }
 
     @Test
-    public void testSimpleCases() {
+    public void testNullCases() {
         assertEquals( Levenshtein.calc( "", "" ) , 0 );
-        assertEquals( Levenshtein.calc( "", "AAAA" ) , 4 );
         assertEquals( Levenshtein.calc( "A", "A" ) , 0 );
+    }
+
+    @Test
+    public void testInsertCases() {
         assertEquals( Levenshtein.calc( "A", "AB" ) , 1 );
-        assertEquals( Levenshtein.calc( "AB", "A" ) , 1 );
-        assertEquals( Levenshtein.calc( "AA", "BB" ) , 2 );
+        assertEquals( Levenshtein.calc( "", "AAAA" ) , 4 );
     }
 
     @Test
@@ -25,7 +27,11 @@ public class LevenshteinTests extends TestCase {
         assertEquals( Levenshtein.calc( "ABBA", "ABABA" ) , 1 );
         assertEquals( Levenshtein.calc( "ABC", "XYZ" ) , 3 );
         assertEquals( Levenshtein.calc( "ABC", "BCA" ) , 2 );
-        assertEquals( Levenshtein.calc( "ABCDEF", "BCDEFA" ) , 2 ); // cycle shift
+    }
+
+    @Test
+    public void testCycleShift() {
+        assertEquals( Levenshtein.calc( "ABCDEF", "BCDEFA" ) , 2 );
     }
 
     @Test
