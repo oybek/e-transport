@@ -1,6 +1,7 @@
 package com.oybek.ekbts;
 
 import com.google.gson.Gson;
+import com.oybek.ekbts.algorithms.Levenshtein;
 import com.oybek.ekbts.entities.Stop;
 import com.sun.javafx.geom.Vec2d;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,6 +10,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class Engine {
@@ -40,6 +42,17 @@ public class Engine {
     }
 
     //
+
+    public List<Stop> getTramStopByName(String name) {
+        return getByName(tramStops, name);
+    }
+
+    private List<Stop> getByName(List<Stop> stops, String name) {
+        return stops
+                .stream()
+                .filter(stop -> Levenshtein.calc(stop.getName(), name) < 2)
+                .collect(Collectors.toList());
+    }
 
     public Stop getNearestTramStop(Vec2d coord) {
         return getNearest(tramStops, coord);

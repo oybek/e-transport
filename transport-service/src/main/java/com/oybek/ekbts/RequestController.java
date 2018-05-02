@@ -5,6 +5,9 @@ import com.oybek.ekbts.entities.Stop;
 import com.sun.javafx.geom.Vec2d;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 public class RequestController {
 
@@ -19,6 +22,23 @@ public class RequestController {
     @GetMapping(value = "/test")
     public String getInfo() {
         return "ok";
+    }
+
+    @GetMapping(value = "/tram_stops/get")
+    public List<Result> getTramByName(@RequestParam("name") String name) {
+        List<Stop> matchedStops = engine.getTramStopByName(name);
+
+        List<Result> results = new ArrayList<>();
+
+        matchedStops.forEach(stop -> {
+            Result result = ettu.getInfo(stop);
+            result.setStopType("tram");
+            result.setStopName(stop.getName() + "(" + stop.getDirection() + ")");
+
+            results.add(result);
+        });
+
+        return results;
     }
 
     @GetMapping(value = "/troll_stops/get_nearest")
