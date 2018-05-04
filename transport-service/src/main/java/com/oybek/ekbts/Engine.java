@@ -4,11 +4,13 @@ import com.google.gson.Gson;
 import com.oybek.ekbts.algorithms.Levenshtein;
 import com.oybek.ekbts.entities.Stop;
 import com.sun.javafx.geom.Vec2d;
+import javafx.util.Pair;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,11 +49,45 @@ public class Engine {
         return getByName(tramStops, name);
     }
 
+    // Prepares string before Levenshtein calculations
+    private String prepare(String s) {
+        return s
+                .trim()
+                .toLowerCase()
+                .replaceAll("пл\\.", "")
+                .replaceAll("ст\\.", "")
+                .replaceAll("г\\.", "")
+                .replaceAll("гост\\.", "")
+                .replaceAll("пер\\.", "")
+                .replaceAll("м\\.", "")
+                .replaceAll( "[^0-9а-я]", "" )
+        ;
+    }
+
     private List<Stop> getByName(List<Stop> stops, String name) {
-        final int maxMistakeNum = name.length() / 4;
-        return stops
+        final String namePrepared = prepare(name);
+        final int maxMistakeNum = name.length() / 2;
+
+        // get tram stops sorted by match level
+        List<Pair<Integer, Stop>> sortedStops = stops
                 .stream()
-                .filter(stop -> Levenshtein.calc(stop.getName().trim().toLowerCase(), name.trim().toLowerCase()) < maxMistakeNum)
+                .map( stop -> new Pair<>(Levenshtein.calc(prepare(stop.getName()), namePrepared), stop) )
+                .sorted( Comparator.comparing(Pair<Integer, Stop>::getKey) )
+                .collect(Collectors.toList());
+
+        final int minMistakeNum = sortedStops.get(0).getKey();
+
+        System.out.println( String.format( "min mistake num: %d", minMistakeNum ) );
+
+        // if most matched string has more than maxMistakeNum dist
+        if (minMistakeNum > maxMistakeNum )
+            return new ArrayList<>();
+
+        // return most matched stops
+        return sortedStops
+                .stream()
+                .filter( x -> x.getKey() == minMistakeNum )
+                .map( x -> x.getValue() )
                 .collect(Collectors.toList());
     }
 
