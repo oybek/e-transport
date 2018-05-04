@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class RequestController {
@@ -28,17 +29,13 @@ public class RequestController {
     public List<Result> getTramByName(@RequestParam("name") String name) {
         List<Stop> matchedStops = engine.getTramStopByName(name);
 
-        List<Result> results = new ArrayList<>();
-
-        matchedStops.forEach(stop -> {
-            Result result = ettu.getInfo(stop);
-            result.setStopType("tram");
-            result.setStopName(stop.getName() + "(" + stop.getDirection() + ")");
-
-            results.add(result);
-        });
-
-        return results;
+        return matchedStops
+                .stream()
+                .map(stop -> ettu
+                    .getInfo(stop)
+                    .setStopType("tram")
+                    .setStopName(stop.getName() + "(" + stop.getDirection() + ")"))
+                .collect(Collectors.toList());
     }
 
     @GetMapping(value = "/troll_stops/get_nearest")

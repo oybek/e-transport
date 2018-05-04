@@ -48,9 +48,10 @@ public class Engine {
     }
 
     private List<Stop> getByName(List<Stop> stops, String name) {
+        final int maxMistakeNum = name.length() / 4;
         return stops
                 .stream()
-                .filter(stop -> Levenshtein.calc(stop.getName(), name) < 2)
+                .filter(stop -> Levenshtein.calc(stop.getName().trim().toLowerCase(), name.trim().toLowerCase()) < maxMistakeNum)
                 .collect(Collectors.toList());
     }
 

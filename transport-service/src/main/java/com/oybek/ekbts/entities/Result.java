@@ -17,8 +17,9 @@ public class Result {
         return stopName;
     }
 
-    public void setStopName(String stopName) {
+    public Result setStopName(String stopName) {
         this.stopName = stopName;
+        return this;
     }
 
     public List<TramInfo> getTransportInfoList() {
@@ -33,8 +34,9 @@ public class Result {
         return stopType;
     }
 
-    public void setStopType(String stopType) {
+    public Result setStopType(String stopType) {
         this.stopType = stopType;
+        return this;
     }
 
     public double getLatitude() {
