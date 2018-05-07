@@ -5,9 +5,9 @@ import com.oybek.ekbts.entities.Stop;
 import com.sun.javafx.geom.Vec2d;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 public class RequestController {
@@ -26,7 +26,9 @@ public class RequestController {
     }
 
     @GetMapping(value = "/tram_stops/get")
-    public List<Result> getTramByName(@RequestParam("name") String name) {
+    public List<Result> getTramByName(
+        @RequestParam("name") String name
+    ) {
         List<Stop> matchedStops = engine.getTramStopByName(name);
 
         return matchedStops
@@ -39,59 +41,37 @@ public class RequestController {
     }
 
     @GetMapping(value = "/troll_stops/get_nearest")
-    public Result getNearestTrollStop(@RequestParam("latitude") double latitude
-            , @RequestParam("longitude") double longitude ) {
-        Stop trollStop = engine.getNearestTrollStop( new Vec2d( latitude, longitude ) );
+    public List<Result> getNearestTrollStop(
+        @RequestParam("latitude") double latitude
+        , @RequestParam("longitude") double longitude
+        , @RequestParam("n") int n
+    ) {
+        Stream<Stop> trollStops = engine.getNearestTrollStops( new Vec2d(latitude, longitude), n );
 
-        Result result = ettu.getInfo(trollStop);
-        result.setStopType("troll");
-        result.setStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")" );
-
-        return result;
-    }
-
-    @GetMapping(value = "/troll_stops/get_nearest_to_nearest")
-    public Result getNearestToNearestTrollStop(@RequestParam("latitude") double latitude
-            , @RequestParam("longitude") double longitude ) {
-        Stop trollStop = engine.getNearestToNearestTrollStop( new Vec2d( latitude, longitude ) );
-
-        Result result = ettu.getInfo(trollStop);
-        result.setStopType("troll");
-        result.setStopName(trollStop.getName() + " (" + trollStop.getDirection() + ")");
-
-        return result;
+        return trollStops
+                .map( stop -> ettu.getInfo(stop).setStopType("troll") )
+                .collect( Collectors.toList() );
     }
 
     @GetMapping(value = "/tram_stops/get_nearest")
-    public Result getNearestTramStop(@RequestParam("latitude") double latitude
-            , @RequestParam("longitude") double longitude ) {
-        Stop tramStop = engine.getNearestTramStop( new Vec2d( latitude, longitude ) );
+    public List<Result> getNearestTramStop(
+        @RequestParam("latitude") double latitude
+        , @RequestParam("longitude") double longitude
+        , @RequestParam("n") int n
+    ) {
+        Stream<Stop> tramStops = engine.getNearestTramStops( new Vec2d(latitude, longitude), n );
 
-        Result result = ettu.getInfo(tramStop);
-        result.setStopType("tram");
-        result.setStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")" );
-
-        return result;
-    }
-
-    @GetMapping(value = "/tram_stops/get_nearest_to_nearest")
-    public Result getNearestToNearest(@RequestParam("latitude") double latitude
-            , @RequestParam("longitude") double longitude ) {
-        Stop tramStop = engine.getNearestToNearestTramStop( new Vec2d( latitude, longitude ) );
-
-        Result result = ettu.getInfo(tramStop);
-        result.setStopType("tram");
-        result.setStopName(tramStop.getName() + " (" + tramStop.getDirection() + ")");
-
-        return result;
+        return tramStops
+                .map( stop -> ettu.getInfo(stop).setStopType("tram") )
+                .collect( Collectors.toList() );
     }
 
     @GetMapping(value = "/get_distance")
     public double getDistance(
-        @RequestParam("lat1") double lat1,
-        @RequestParam("lon1") double lon1,
-        @RequestParam("lat2") double lat2,
-        @RequestParam("lon2") double lon2 )
+        @RequestParam("lat1") double lat1
+        , @RequestParam("lon1") double lon1
+        , @RequestParam("lat2") double lat2
+        , @RequestParam("lon2") double lon2 )
     {
         return engine.getDistance(lat1, lon1, lat2, lon2);
     }
