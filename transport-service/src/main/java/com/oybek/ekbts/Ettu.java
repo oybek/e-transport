@@ -41,6 +41,7 @@ public class Ettu {
                 Result result = new Result(tramInfos);
                 result.setLatitude(stop.getLatitude());
                 result.setLongitude(stop.getLongitude());
+                result.setStopName(stop.getName() + " (" + stop.getDirection() + ")");
                 return result;
             }
         } catch (IOException e) {

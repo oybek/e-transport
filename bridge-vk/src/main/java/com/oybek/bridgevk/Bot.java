@@ -4,6 +4,9 @@ import com.oybek.bridgevk.Entities.Geo;
 import com.oybek.bridgevk.Entities.Message;
 import com.oybek.bridgevk.Entities.StopInfo;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class Bot {
     private enum State { TRAM, WAIT_TROLL_APPROVE }
 
@@ -33,20 +36,21 @@ public class Bot {
                     Message replyMsg = msg;
 
                     // get info about troll stop
-                    StopInfo stopInfo = ettu.getNearestTrollStop(msg.getGeo());
+                    List<StopInfo> stopInfos = ettu.getNearestTrollStops(msg.getGeo(), 2);
 
-                    if (stopInfo == null) {
+                    if (stopInfos == null) {
                         replyMsg.setText("Извините, не удалось найти информацию о троллейбусах 😞");
                         return replyMsg;
                     }
 
                     // provide information
-                    replyMsg.setText("🚎 Ближайшая троллейбусная остановка: " + stopInfo.getTextInfo());
+                    replyMsg.setText(
+                        stopInfos
+                            .stream()
+                            .map( stopInfo -> "🚎 Остановка: " + stopInfo.getTextInfo() )
+                            .collect(Collectors.joining("\n"))
+                    );
 
-                    if (ettu.getDistance(stopInfo.getGeo(), msg.getGeo()) > 25.0) {
-                        StopInfo trollStop2Info = ettu.getNearestToNearestTrollStop(msg.getGeo());
-                        replyMsg.appendText("\n🚎 Другое направление: " + trollStop2Info.getTextInfo());
-                    }
                     return replyMsg;
                 } else {
                     return getReaction(msg);
@@ -65,20 +69,20 @@ public class Bot {
                 }
 
                 // get info about tram stop
-                StopInfo stopInfo = ettu.getNearestTramStop(msg.getGeo());
+                List<StopInfo> stopInfos = ettu.getNearestTramStops(msg.getGeo(), 2);
 
-                if (stopInfo == null) {
+                if (stopInfos == null) {
                     replyMsg.setText("Извините, не удалось найти информацию о трамваях 😞");
                     return replyMsg;
                 }
 
                 // provide information
-                replyMsg.setText("🚋 Ближайшая трамвайная остановка: " + stopInfo.getTextInfo());
-
-                if (ettu.getDistance(stopInfo.getGeo(), msg.getGeo()) > 25.0) {
-                    StopInfo tramStop2Info = ettu.getNearestToNearestTramStop(msg.getGeo());
-                    replyMsg.appendText("\n🚋 Другое направление: " + tramStop2Info.getTextInfo());
-                }
+                replyMsg.setText(
+                        stopInfos
+                                .stream()
+                                .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
+                                .collect(Collectors.joining("\n"))
+                );
 
                 replyMsg.appendText("\nПоказать информацию по троллейбусам?");
                 state = State.WAIT_TROLL_APPROVE;

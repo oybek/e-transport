@@ -5,48 +5,35 @@ import com.oybek.bridgevk.Entities.Geo;
 import com.oybek.bridgevk.Entities.StopInfo;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 @Component
 public class Ettu {
-    Gson gson;
+    Gson gson = new Gson();
 
-    private final String urlGetNearestTramStop = "http://localhost:9100/tram_stops/get_nearest?latitude=%f&longitude=%f";
-    private final String urlGetNearestToNearestTramStop = "http://localhost:9100/tram_stops/get_nearest_to_nearest?latitude=%f&longitude=%f";
-
-    private final String urlGetNearestTrollStop = "http://localhost:9100/troll_stops/get_nearest?latitude=%f&longitude=%f";
-    private final String urlGetNearestToNearestTrollStop = "http://localhost:9100/troll_stops/get_nearest_to_nearest?latitude=%f&longitude=%f";
-
-    private final String urlGetDistance = "http://localhost:9100/get_distance?lat1=%f&lon1=%f&lat2=%f&lon2=%f";
-
-
-    Ettu() {
-        gson = new Gson();
-    }
+    private static final String urlGetNearestTramStops = "http://localhost:9100/tram_stops/get_nearest?latitude=%f&longitude=%f&n=%d";
+    private static final String urlGetNearestTrollStops = "http://localhost:9100/troll_stops/get_nearest?latitude=%f&longitude=%f&n=%d";
+    private static final String urlGetDistance = "http://localhost:9100/get_distance?lat1=%f&lon1=%f&lat2=%f&lon2=%f";
 
     //
-    private StopInfo get(String url, Geo geo) {
+    private List<StopInfo> get(String url, Geo geo, int n) {
         if (geo != null) {
-            String response = Courier.get(String.format(url, geo.getLatitude(), geo.getLongitude()));
-            StopInfo tramStopInfo = gson.fromJson(response, StopInfo.class);
-            return tramStopInfo;
+            String response = Courier.get(String.format(url, geo.getLatitude(), geo.getLongitude(), n));
+            StopInfo[] tramStopInfo = gson.fromJson(response, StopInfo[].class);
+            return new ArrayList<>(Arrays.asList(tramStopInfo));
         } else {
             return null;
         }
     }
 
-    public StopInfo getNearestTramStop(Geo geo) {
-        return get(urlGetNearestTramStop, geo);
+    public List<StopInfo> getNearestTramStops(Geo geo, int n) {
+        return get(urlGetNearestTramStops, geo, n);
     }
 
-    public StopInfo getNearestToNearestTramStop(Geo geo) {
-        return get(urlGetNearestToNearestTramStop, geo);
-    }
-
-    public StopInfo getNearestTrollStop(Geo geo) {
-        return get(urlGetNearestTrollStop, geo);
-    }
-
-    public StopInfo getNearestToNearestTrollStop(Geo geo) {
-        return get(urlGetNearestToNearestTrollStop, geo);
+    public List<StopInfo> getNearestTrollStops(Geo geo, int n) {
+        return get(urlGetNearestTrollStops, geo, n);
     }
 
     //
