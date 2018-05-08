@@ -1,8 +1,11 @@
 package com.oybek.bridgevk;
 
 import com.oybek.bridgevk.Entities.Message;
+import com.oybek.bridgevk.Entities.StopInfo;
 import org.springframework.stereotype.Component;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 
 @Component
@@ -39,14 +42,19 @@ public class SuperBot {
                 // ... get message from queue
                 Message msg = queueController.getQueueToBot().poll();
 
-                // create bot, when it creates it runs in new thread
-                bots.putIfAbsent(msg.getUid(), new Bot(ettu, queueController.getQueueFromBot()));
+                // get reaction of bot to message
+                bots.putIfAbsent(msg.getUid(), new Bot(ettu));
+                Message replyMsg = bots.get(msg.getUid()).getReaction(msg);
 
-                // give msg to bot
-                bots.get(msg.getUid()).setMessage(msg);
+                // url encode bot's response
+                try {
+                    replyMsg.setText(URLEncoder.encode(replyMsg.getText(), "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
 
-                // shake bot in order to make it work
-                bots.get( msg.getUid() ).shake();
+                // put bot's reply to outgoing queue
+                queueController.getQueueFromBot().add(msg);
             }
         }
     }
