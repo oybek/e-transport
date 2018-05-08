@@ -54,7 +54,7 @@ public class SuperBot {
                 }
 
                 // put bot's reply to outgoing queue
-                queueController.getQueueFromBot().add(msg);
+                queueController.getQueueFromBot().add(replyMsg);
             }
         }
     }

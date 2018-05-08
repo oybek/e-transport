@@ -15,13 +15,17 @@ public class Message {
     private Geo geo;
     private String attachment;
 
-    public Message(long id, long date, long uid, long readState, String text, Geo geo) {
+    public Message() {
+    }
+
+    public Message(long id, long date, long uid, long readState, String text, Geo geo, String attachment) {
         this.id = id;
         this.date = date;
         this.uid = uid;
         this.readState = readState;
         this.text = text;
         this.geo = geo;
+        this.attachment = attachment;
     }
 
     public Message(JsonObject jObj) {
@@ -75,8 +79,9 @@ public class Message {
         return uid;
     }
 
-    public void setUid(long uid) {
+    public Message setUid(long uid) {
         this.uid = uid;
+        return this;
     }
 
     public long getReadState() {
@@ -91,12 +96,18 @@ public class Message {
         return text;
     }
 
-    public void setText(String text) {
+    public Message setText(String text) {
         this.text = text;
+        return this;
     }
 
-    public void appendText(String text) {
+    public Boolean hasText() {
+        return text != null;
+    }
+
+    public Message appendText(String text) {
         this.text = (this.text == null ? text : this.text.concat(text));
+        return this;
     }
 
     public Geo getGeo() {
@@ -107,12 +118,30 @@ public class Message {
         this.geo = geo;
     }
 
+    public Boolean hasGeo() {
+        return geo != null;
+    }
+
     public String getAttachment() {
         return attachment;
     }
 
-    public void setAttachment(String attachment) {
+    public Message setAttachment(String attachment) {
         this.attachment = attachment;
+        return this;
+    }
+
+    @Override
+    public Message clone() {
+        return new Message(
+            id
+            , date
+            , uid
+            , readState
+            , text
+            , geo
+            , attachment
+        );
     }
 
     @Override

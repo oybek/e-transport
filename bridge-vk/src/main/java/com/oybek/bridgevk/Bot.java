@@ -1,6 +1,5 @@
 package com.oybek.bridgevk;
 
-import com.oybek.bridgevk.Entities.Geo;
 import com.oybek.bridgevk.Entities.Message;
 import com.oybek.bridgevk.Entities.StopInfo;
 
@@ -8,11 +7,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Bot {
-    private enum State { TRAM, WAIT_TROLL_APPROVE }
+    private enum State {
+          HELP
+        , TRAM
+        , TROLL }
 
     private Ettu ettu;
     private State state = State.TRAM;
-    private Geo lastGeo = null;
+    private Message lastMessage = null;
 
     //
     Bot(Ettu ettu) {
@@ -26,68 +28,67 @@ public class Bot {
                 break;
             }
 
-            case WAIT_TROLL_APPROVE: {
-                state = State.TRAM;
-                if (msg.getText() != null
-                        && ( msg.getText().toLowerCase().equals("да") || msg.getText().toLowerCase().equals("lf") ) ) {
-                    msg.setGeo(lastGeo);
+            case HELP: {
+                return new Message()
+                        .setUid(msg.getUid())
+                        .setText("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:")
+                        .setAttachment("doc-163915852_464149858");
+            }
 
-                    // TODO: override clone method and work with clone
-                    Message replyMsg = msg;
+            case TROLL: {
+                // if user agree to see info about trolls...
+                if (msg.hasText() && msg.getText().toLowerCase().matches("да|lf|\\+")) {
 
-                    // get info about troll stop
-                    List<StopInfo> stopInfos = ettu.getNearestTrollStops(msg.getGeo(), 2);
+                    // ... get info about troll stop
+                    List<StopInfo> stopInfos = ettu.getNearestTrollStops(lastMessage.getGeo(), 2);
 
+                    // if no trolleybus found ...
                     if (stopInfos == null) {
-                        replyMsg.setText("Извините, не удалось найти информацию о троллейбусах 😞");
-                        return replyMsg;
+                        state = State.HELP;
+                        return getReaction(msg);
+                    } else {
+                        state = State.TRAM;
+                        return new Message()
+                                .setUid(msg.getUid())
+                                .setText(
+                                    stopInfos
+                                        .stream()
+                                        .map( stopInfo -> "🚎 Остановка: " + stopInfo.getTextInfo() )
+                                        .collect(Collectors.joining("\n")));
                     }
-
-                    // provide information
-                    replyMsg.setText(
-                        stopInfos
-                            .stream()
-                            .map( stopInfo -> "🚎 Остановка: " + stopInfo.getTextInfo() )
-                            .collect(Collectors.joining("\n"))
-                    );
-
-                    return replyMsg;
                 } else {
+                    // ... react to message as new request
+                    state = State.TRAM;
                     return getReaction(msg);
                 }
             }
 
             case TRAM: {
-                // TODO: override clone method and work with clone
-                Message replyMsg = msg;
-
                 // no geolocation provided
-                if (msg.getGeo() == null) {
-                    replyMsg.setText("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:");
-                    replyMsg.setAttachment("doc-163915852_464149858");
-                    return replyMsg;
+                if (!msg.hasGeo()) {
+                    return new Message()
+                            .setUid(msg.getUid())
+                            .setText("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:")
+                            .setAttachment("doc-163915852_464149858");
                 }
 
-                // get info about tram stop
                 List<StopInfo> stopInfos = ettu.getNearestTramStops(msg.getGeo(), 2);
 
                 if (stopInfos == null) {
-                    replyMsg.setText("Извините, не удалось найти информацию о трамваях 😞");
-                    return replyMsg;
+                    state = State.HELP;
+                    return getReaction(msg);
+                } else {
+                    state = State.TROLL;
+                    lastMessage = msg;
+                    return new Message()
+                            .setUid(msg.getUid())
+                            .setText(
+                                stopInfos
+                                    .stream()
+                                    .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
+                                    .collect(Collectors.joining("\n")))
+                            .appendText("\nПоказать троллейбусы?");
                 }
-
-                // provide information
-                replyMsg.setText(
-                        stopInfos
-                                .stream()
-                                .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
-                                .collect(Collectors.joining("\n"))
-                );
-
-                replyMsg.appendText("\nПоказать информацию по троллейбусам?");
-                state = State.WAIT_TROLL_APPROVE;
-                lastGeo = msg.getGeo();
-                return replyMsg;
             }
         }
 
