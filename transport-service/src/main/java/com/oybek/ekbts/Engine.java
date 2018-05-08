@@ -112,6 +112,10 @@ public class Engine {
         return getByName(tramStops, name);
     }
 
+    public List<Stop> getTrollStopByName(String name) {
+        return getByName(trollStops, name);
+    }
+
     public Stream<Stop> getNearestTramStops(Vec2d coord, int n) {
         return getNearest(tramStops, coord, n);
     }

@@ -40,6 +40,21 @@ public class RequestController {
                 .collect(Collectors.toList());
     }
 
+    @GetMapping(value = "/troll_stops/get")
+    public List<Result> getTrollByName(
+            @RequestParam("name") String name
+    ) {
+        List<Stop> matchedStops = engine.getTrollStopByName(name);
+
+        return matchedStops
+                .stream()
+                .map(stop -> ettu
+                        .getInfo(stop)
+                        .setStopType("troll")
+                        .setStopName(stop.getName() + "(" + stop.getDirection() + ")"))
+                .collect(Collectors.toList());
+    }
+
     @GetMapping(value = "/troll_stops/get_nearest")
     public List<Result> getNearestTrollStop(
         @RequestParam("latitude") double latitude
