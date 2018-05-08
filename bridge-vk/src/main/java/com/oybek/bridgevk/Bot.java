@@ -10,7 +10,9 @@ public class Bot {
     private enum State {
           HELP
         , TRAM
-        , TROLL }
+        , TROLL
+        , TROLL_CONFIRM
+    }
 
     private Ettu ettu;
     private State state = State.TRAM;
@@ -29,33 +31,18 @@ public class Bot {
             }
 
             case HELP: {
+                state = State.TRAM;
                 return new Message()
                         .setUid(msg.getUid())
                         .setText("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:")
                         .setAttachment("doc-163915852_464149858");
             }
 
-            case TROLL: {
+            case TROLL_CONFIRM: {
                 // if user agree to see info about trolls...
                 if (msg.hasText() && msg.getText().toLowerCase().matches("да|lf|\\+")) {
-
-                    // ... get info about troll stop
-                    List<StopInfo> stopInfos = ettu.getNearestTrollStops(lastMessage.getGeo(), 2);
-
-                    // if no trolleybus found ...
-                    if (stopInfos == null) {
-                        state = State.HELP;
-                        return getReaction(msg);
-                    } else {
-                        state = State.TRAM;
-                        return new Message()
-                                .setUid(msg.getUid())
-                                .setText(
-                                    stopInfos
-                                        .stream()
-                                        .map( stopInfo -> "🚎 Остановка: " + stopInfo.getTextInfo() )
-                                        .collect(Collectors.joining("\n")));
-                    }
+                    state = State.TROLL;
+                    return getReaction(lastMessage);
                 } else {
                     // ... react to message as new request
                     state = State.TRAM;
@@ -63,31 +50,79 @@ public class Bot {
                 }
             }
 
-            case TRAM: {
-                // no geolocation provided
-                if (!msg.hasGeo()) {
-                    return new Message()
-                            .setUid(msg.getUid())
-                            .setText("Для того чтобы я мог найти ближайшую остановку, отправьте мне свои координаты, вот как это делается:")
-                            .setAttachment("doc-163915852_464149858");
-                }
+            case TROLL: {
+                List<StopInfo> stopInfos = lastMessage.hasGeo()
+                                                ? ettu.getNearestTrolls(lastMessage.getGeo(), 2)
+                                                : lastMessage.hasText()
+                                                    ? ettu.getTrolls(lastMessage.getText())
+                                                    : null;
 
-                List<StopInfo> stopInfos = ettu.getNearestTramStops(msg.getGeo(), 2);
-
-                if (stopInfos == null) {
+                // if no trolleybus found ...
+                if (stopInfos == null || stopInfos.size() == 0) {
                     state = State.HELP;
                     return getReaction(msg);
                 } else {
-                    state = State.TROLL;
-                    lastMessage = msg;
+                    state = State.TRAM;
                     return new Message()
                             .setUid(msg.getUid())
                             .setText(
-                                stopInfos
-                                    .stream()
-                                    .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
-                                    .collect(Collectors.joining("\n")))
-                            .appendText("\nПоказать троллейбусы?");
+                                    stopInfos
+                                            .stream()
+                                            .map( stopInfo -> "🚎 Остановка: " + stopInfo.getTextInfo() )
+                                            .collect(Collectors.joining("\n")));
+                }
+            }
+
+            case TRAM: {
+                if (msg.hasGeo()) {
+                    List<StopInfo> stopInfos = ettu.getNearestTrams(msg.getGeo(), 2);
+
+                    if (stopInfos == null || stopInfos.size() == 0) {
+                        state = State.HELP;
+                        return getReaction(msg);
+                    } else {
+                        state = State.TROLL_CONFIRM;
+                        lastMessage = msg.clone();
+                        return new Message()
+                                .setUid(msg.getUid())
+                                .setText(
+                                    stopInfos
+                                        .stream()
+                                        .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
+                                        .collect(Collectors.joining("\n")))
+                                .appendText("\nПоказать троллейбусы?");
+                    }
+                }
+                else if (msg.hasText()) {
+                    List<StopInfo> stopInfos = ettu.getTrams(msg.getText());
+
+                    boolean ask = true;
+                    {
+                        List<StopInfo> trollStopInfos = ettu.getTrolls(msg.getText());
+                        if (trollStopInfos == null || trollStopInfos.size() == 0)
+                            ask = false;
+                    }
+
+                    if (stopInfos == null || stopInfos.size() == 0) {
+                        state = State.TROLL;
+                        lastMessage = msg.clone();
+                        return getReaction(msg);
+                    } else {
+                        state = State.TROLL_CONFIRM;
+                        lastMessage = msg.clone();
+                        return new Message()
+                                .setUid(msg.getUid())
+                                .setText(
+                                        stopInfos
+                                                .stream()
+                                                .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
+                                                .collect(Collectors.joining("\n")))
+                                .appendText( ask ? "\nПоказать троллейбусы?" : "" );
+                    }
+                }
+                else {
+                    state = State.HELP;
+                    return getReaction(msg);
                 }
             }
         }

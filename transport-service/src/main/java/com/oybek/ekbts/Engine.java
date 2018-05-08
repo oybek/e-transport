@@ -61,7 +61,7 @@ public class Engine {
 
     private List<Stop> getByName(List<Stop> stops, String name) {
         final String namePrepared = prepare(name);
-        final int maxMistakeNum = name.length() / 2;
+        final int maxMistakeNum = name.length() / 3;
 
         // get tram stops sorted by match level
         List<Pair<Integer, Stop>> sortedStops = stops
