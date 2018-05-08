@@ -55,6 +55,7 @@ public class Engine {
                 .replaceAll("гост\\.", "")
                 .replaceAll("пер\\.", "")
                 .replaceAll("м\\.", "")
+                .replaceAll("трц", "")
                 .replaceAll( "[^0-9а-я]", "" )
         ;
     }
@@ -83,6 +84,7 @@ public class Engine {
                 .stream()
                 .filter( x -> x.getKey() == minMistakeNum )
                 .map( x -> x.getValue() )
+                .limit( 4 )
                 .collect(Collectors.toList());
     }
 
