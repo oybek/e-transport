@@ -68,7 +68,7 @@ public class Bot {
                             .setText(
                                     stopInfos
                                             .stream()
-                                            .map( stopInfo -> "🚎 Остановка: " + stopInfo.getTextInfo() )
+                                            .map( stopInfo -> "🚎" + stopInfo.getTextInfo() )
                                             .collect(Collectors.joining("\n")));
                 }
             }
@@ -88,7 +88,7 @@ public class Bot {
                                 .setText(
                                     stopInfos
                                         .stream()
-                                        .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
+                                        .map( stopInfo -> "🚋" + stopInfo.getTextInfo() )
                                         .collect(Collectors.joining("\n")))
                                 .appendText("\nПоказать троллейбусы?");
                     }
@@ -115,7 +115,7 @@ public class Bot {
                                 .setText(
                                         stopInfos
                                                 .stream()
-                                                .map( stopInfo -> "🚋 Остановка: " + stopInfo.getTextInfo() )
+                                                .map( stopInfo -> "🚋" + stopInfo.getTextInfo() )
                                                 .collect(Collectors.joining("\n")))
                                 .appendText( ask ? "\nПоказать троллейбусы?" : "" );
                     }
