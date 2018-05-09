@@ -55,13 +55,14 @@ public class Engine {
                 .replaceAll("гост\\.", "")
                 .replaceAll("пер\\.", "")
                 .replaceAll("м\\.", "")
+                .replaceAll("трц", "")
                 .replaceAll( "[^0-9а-я]", "" )
         ;
     }
 
     private List<Stop> getByName(List<Stop> stops, String name) {
         final String namePrepared = prepare(name);
-        final int maxMistakeNum = name.length() / 2;
+        final int maxMistakeNum = name.length() / 3;
 
         // get tram stops sorted by match level
         List<Pair<Integer, Stop>> sortedStops = stops
@@ -83,6 +84,7 @@ public class Engine {
                 .stream()
                 .filter( x -> x.getKey() == minMistakeNum )
                 .map( x -> x.getValue() )
+                .limit( 4 )
                 .collect(Collectors.toList());
     }
 
@@ -110,6 +112,10 @@ public class Engine {
 
     public List<Stop> getTramStopByName(String name) {
         return getByName(tramStops, name);
+    }
+
+    public List<Stop> getTrollStopByName(String name) {
+        return getByName(trollStops, name);
     }
 
     public Stream<Stop> getNearestTramStops(Vec2d coord, int n) {

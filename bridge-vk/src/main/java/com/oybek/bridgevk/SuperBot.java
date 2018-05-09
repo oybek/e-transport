@@ -1,7 +1,6 @@
 package com.oybek.bridgevk;
 
 import com.oybek.bridgevk.Entities.Message;
-import com.oybek.bridgevk.Entities.StopInfo;
 import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;
@@ -54,7 +53,7 @@ public class SuperBot {
                 }
 
                 // put bot's reply to outgoing queue
-                queueController.getQueueFromBot().add(msg);
+                queueController.getQueueFromBot().add(replyMsg);
             }
         }
     }

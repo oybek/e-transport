@@ -35,8 +35,21 @@ public class RequestController {
                 .stream()
                 .map(stop -> ettu
                     .getInfo(stop)
-                    .setStopType("tram")
-                    .setStopName(stop.getName() + "(" + stop.getDirection() + ")"))
+                    .setStopType("tram"))
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping(value = "/troll_stops/get")
+    public List<Result> getTrollByName(
+            @RequestParam("name") String name
+    ) {
+        List<Stop> matchedStops = engine.getTrollStopByName(name);
+
+        return matchedStops
+                .stream()
+                .map(stop -> ettu
+                        .getInfo(stop)
+                        .setStopType("troll"))
                 .collect(Collectors.toList());
     }
 
