@@ -46,6 +46,8 @@ public class Message {
 
         if (jObj.has("body")) {
             this.text = jObj.get("body").getAsString();
+            if (this.text.length() > 30)
+                this.text = this.text.substring(0, 30);
         } else {
             this.text = null;
         }
