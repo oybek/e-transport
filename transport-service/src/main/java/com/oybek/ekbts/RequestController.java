@@ -35,8 +35,7 @@ public class RequestController {
                 .stream()
                 .map(stop -> ettu
                     .getInfo(stop)
-                    .setStopType("tram")
-                    .setStopName(stop.getName() + "(" + stop.getDirection() + ")"))
+                    .setStopType("tram"))
                 .collect(Collectors.toList());
     }
 
@@ -50,8 +49,7 @@ public class RequestController {
                 .stream()
                 .map(stop -> ettu
                         .getInfo(stop)
-                        .setStopType("troll")
-                        .setStopName(stop.getName() + "(" + stop.getDirection() + ")"))
+                        .setStopType("troll"))
                 .collect(Collectors.toList());
     }
 

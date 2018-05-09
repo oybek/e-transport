@@ -93,7 +93,7 @@ public class Stop {
         this.longitude = longitude;
     }
 
-    public String getDirection() { return direction; }
+    public String getDirection() { return direction.length() == 0 ? "" : "("+direction+")"; }
 
     public void setDirection(String direction) { this.direction = direction; }
 

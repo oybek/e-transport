@@ -1,7 +1,6 @@
 package com.oybek.bridgevk;
 
 import com.oybek.bridgevk.Entities.Message;
-import com.oybek.bridgevk.Entities.StopInfo;
 import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;

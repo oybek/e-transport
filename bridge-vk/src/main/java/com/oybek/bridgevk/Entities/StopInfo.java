@@ -62,6 +62,11 @@ public class StopInfo {
 
         answer.append(String.format(getStopName() + "\n"));
 
+        if (getTransportInfoList() == null || getTransportInfoList().size() == 0) {
+            answer.append("В ближайшее время не будет транспорта\n");
+            return answer.toString();
+        }
+
         for (TransportInfo transportInfo : getTransportInfoList()) {
             long timeToReach = Long.parseLong(transportInfo.getTimeReach());
             if (stopType.equals("tram")) {
@@ -77,6 +82,7 @@ public class StopInfo {
                 );
             }
         }
+
         return answer.toString();
     }
 
