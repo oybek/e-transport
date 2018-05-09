@@ -56,6 +56,8 @@ public class Engine {
                 .replaceAll("пер\\.", "")
                 .replaceAll("м\\.", "")
                 .replaceAll("трц", "")
+                .replaceAll("площадь", "")
+                .replaceAll("остановка", "")
                 .replaceAll( "[^0-9а-я]", "" )
         ;
     }
