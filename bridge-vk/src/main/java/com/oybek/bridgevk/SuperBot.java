@@ -32,7 +32,7 @@ public class SuperBot {
             if (queueController.getQueueToBot().isEmpty()) {
                 // ... sleep 0.5 second
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     return;
