@@ -41,7 +41,14 @@ public class Ettu {
                 Result result = new Result(tramInfos);
                 result.setLatitude(stop.getLatitude());
                 result.setLongitude(stop.getLongitude());
-                result.setStopName(stop.getName() + stop.getDirection());
+
+                if (stop.getName() == null || stop.getName().size() == 0) {
+                    System.out.println("Error: corrupt json field" + stop.toString());
+                    result.setStopName("Остановка" + stop.getDirection());
+                } else {
+                    result.setStopName(stop.getName().get(0) + stop.getDirection());
+                }
+
                 return result;
             }
         } catch (IOException e) {
