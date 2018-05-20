@@ -45,4 +45,9 @@ public class LevenshteinTests extends TestCase {
         assertEquals( Levenshtein.calc( "lord666", "orda777" ), 5 );
         assertEquals( Levenshtein.calc( "aaaaaa", "aaabaaa" ), 1 );
     }
+
+    @Test
+    public void testOfEqual() {
+        assertEquals( Levenshtein.calc( "гринвич", "гринвич" ), 0 );
+    }
 }
