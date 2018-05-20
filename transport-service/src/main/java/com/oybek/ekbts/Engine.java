@@ -69,7 +69,13 @@ public class Engine {
         // get tram stops sorted by match level
         List<Pair<Integer, Stop>> sortedStops = stops
                 .stream()
-                .map( stop -> new Pair<>(Levenshtein.calc(prepare(stop.getName()), namePrepared), stop) )
+                .map( stop -> new Pair<>(
+                        stop.getName()
+                            .stream()
+                            .map( x -> Levenshtein.calc(prepare(x), namePrepared) )
+                            .min( Integer::compare )
+                            .orElse( 100 )
+                        , stop))
                 .sorted( Comparator.comparing(Pair<Integer, Stop>::getKey) )
                 .collect(Collectors.toList());
 

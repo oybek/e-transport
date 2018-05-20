@@ -3,12 +3,14 @@ package com.oybek.ekbts.entities;
 import com.google.gson.annotations.SerializedName;
 import com.sun.javafx.geom.Vec2d;
 
+import java.util.List;
+
 public class Stop {
     @SerializedName("ID")
     private String id;
 
     @SerializedName("NAME")
-    private String name;
+    private List<String> name;
 
     @SerializedName("NOTE")
     private String note;
@@ -61,7 +63,7 @@ public class Stop {
     @SerializedName("ACCURACY")
     private double accuracy;
 
-    public String getName() {
+    public List<String> getName() {
         return name;
     }
 
@@ -73,7 +75,7 @@ public class Stop {
         this.id = id;
     }
 
-    public void setName(String name) {
+    public void setName(List<String> name) {
         this.name = name;
     }
 
