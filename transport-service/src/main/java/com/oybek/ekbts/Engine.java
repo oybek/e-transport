@@ -5,8 +5,10 @@ import com.oybek.ekbts.algorithms.Levenshtein;
 import com.oybek.ekbts.entities.Stop;
 import com.sun.javafx.geom.Vec2d;
 import javafx.util.Pair;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,15 +17,22 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@RestController
+@Component
 public class Engine {
+    @Value("${tramStopsFilePath}")
+    private String tramStopsFilePath;
+
+    @Value("${trollStopsFilePath}")
+    private String trollStopsFilePath;
+
     private ArrayList<Stop> tramStops;
     private ArrayList<Stop> trollStops;
 
-    public Engine() {
+    @PostConstruct
+    public void init() {
         Gson gson = new Gson();
 
-        try (Reader reader = new FileReader(getResourceFile("json/tram-stops.json"))) {
+        try (Reader reader = new FileReader(tramStopsFilePath)) {
             // Convert JSON to Java Object
             Stop[] tramStopsRaw = gson.fromJson(reader, Stop[].class);
             tramStops = new ArrayList<>(Arrays.asList(tramStopsRaw));
@@ -33,7 +42,7 @@ public class Engine {
             e.printStackTrace();
         }
 
-        try (Reader reader = new FileReader(getResourceFile("json/troll-stops.json"))) {
+        try (Reader reader = new FileReader(trollStopsFilePath)) {
             // Convert JSON to Java Object
             Stop[] trollStopsRaw = gson.fromJson(reader, Stop[].class);
             trollStops = new ArrayList<>(Arrays.asList(trollStopsRaw));
