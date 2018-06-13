@@ -2,10 +2,13 @@
 
 Tiny project, attempt to create chat-bot for [vk social network](https://vk.com), which provides information about trams coming to certain tram-stop in Ekaterinburg city.
 
+# Current status
+
+For now bot is being used by 600 people everyday. About 1.5k users every week.
+
 # Plans
 
-1. Including another transports of city.
-2. Providing bot for another platforms and other cities.
+In process of adding buses.
 
 # Developer blog
 
