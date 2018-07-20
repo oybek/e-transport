@@ -49,6 +49,7 @@ function main(message) {
 		hippo.send(message);
 	} else
 	if (message.text != null && message.text.length > 0) {
+		message.text = message.text.substr(0, 40);
 		tramStops = getTramByName(message.text);
 		trollStops = getTrollByName(message.text);
 
