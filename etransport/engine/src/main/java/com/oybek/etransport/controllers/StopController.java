@@ -30,10 +30,8 @@ public class StopController {
     }
 
     @RequestMapping("/tram/get")
-    public List<Stop> getTrams(@RequestParam("name") String name,
-                               @RequestParam(value = "user_app") String app,
-                               @RequestParam(value = "user_id") String id) {
-        return stopService.findTramStopsByName(name, new User(app, id));
+    public List<Stop> getTrams(@RequestParam("name") String name) {
+        return stopService.findTramStopsByName(name);
     }
 
     @RequestMapping("/troll/get")

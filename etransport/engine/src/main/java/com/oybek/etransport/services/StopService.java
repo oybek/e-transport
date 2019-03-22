@@ -11,7 +11,7 @@ public interface StopService {
 
     // searches for the stops by name
     List<Stop> findBusStopsByName(String name);
-    List<Stop> findTramStopsByName(String name, User user);
+    List<Stop> findTramStopsByName(String name);
     List<Stop> findTrollStopsByName(String name);
 
     // returns name of the nearest stop in radius of 2km

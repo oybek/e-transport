@@ -93,18 +93,8 @@ public class StopServiceImpl implements StopService {
 
     @Override
     @Transactional
-    public List<Stop> findTramStopsByName(String name, User user) {
-        List<Stop> stops = findStopsByName(name, "tram");
-        stops
-                .stream()
-                .findFirst()
-                .map(stop -> {
-                    Request request = new Request(stop
-                        , new Timestamp(System.currentTimeMillis())
-                        , user);
-                    return requestRepository.save(request);
-                });
-        return stops;
+    public List<Stop> findTramStopsByName(String name) {
+        return findStopsByName(name, "tram");
     }
 
     @Override
