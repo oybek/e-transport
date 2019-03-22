@@ -47,7 +47,7 @@ function on_start() {
             if (response.failed === 1) {
                 server.ts = response.ts;
             } else {
-                getLongPollServer();
+                server = getLongPollServer();
             }
         } else
         if ('updates' in response) {
