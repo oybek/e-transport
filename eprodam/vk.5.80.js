@@ -1,7 +1,7 @@
 
 var id = 165649310;
 var token = "5e2e0de2aadfc335caad66cc730cce6aba66a1cf519d7c1c491e51bdfc745ae51f9c60e844ffcd31248ad";
-var version = "5.8";
+var version = "5.80";
 
 function getLongPollServer() {
     var str =
