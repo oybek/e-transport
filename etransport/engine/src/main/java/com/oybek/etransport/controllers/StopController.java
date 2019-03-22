@@ -21,7 +21,7 @@ public class StopController {
 
     @RequestMapping("/test")
     public String test() {
-        return "ok (jenkins works)";
+        return "ok (ci working)";
     }
 
     @RequestMapping("/bus/get")
