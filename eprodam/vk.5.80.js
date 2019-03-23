@@ -111,7 +111,7 @@ function on_message(message_str) {
     var message = JSON.parse(message_str);
     http.post("https://api.vk.com/method/messages.send",
         {
-            user_id : message.user.id,
+            user_id : parseInt(message.user.id),
             message : message.text,
             keyboard : getKeyboard(message),
             v : version,
