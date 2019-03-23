@@ -57,7 +57,7 @@ function on_start() {
 
                     var message = {
                         user : {
-                            id : update.from_id,
+                            id : update.from_id + "",
                             app : "vk"
                         },
                         text : update.text

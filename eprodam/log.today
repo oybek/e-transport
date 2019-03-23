@@ -1,0 +1,8 @@
+23:35:58.508 [Thread-1] INFO  com.oybek.hippo.service.Query - Post: https://api.vk.com/method/groups.getLongPollServer Params: [group_id=163915852, access_token=5e6b1299b1739c0bdff6ff636b341b6dc6c512215b26cb8c42ffe5d5dcf7dbb2ad7a5f7faf617d687182a, v=5.80]
+23:35:59.185 [Thread-1] INFO  com.oybek.hippo.service.Query - Response: {"response":{"key":"a03ba711ba9a02f87a747c1be70eb6027efe5830","server":"https:\/\/lp.vk.com\/wh163915852","ts":248848}}
+23:35:59.205 [Thread-1] INFO  com.oybek.hippo.service.Query - Post: https://lp.vk.com/wh163915852 Params: [act=a_check, key=a03ba711ba9a02f87a747c1be70eb6027efe5830, ts=248848, wait=25]
+23:36:10.228 [Thread-1] INFO  com.oybek.hippo.service.Query - Response: {"ts":"248849","updates":[{"type":"message_new","object":{"id":559480,"date":1553366170,"out":0,"user_id":213461412,"read_state":0,"title":"","body":"asdfa"},"group_id":163915852}]}
+23:54:46.408 [Thread-1] INFO  com.oybek.hippo.service.Query - Post: https://api.vk.com/method/groups.getLongPollServer Params: [group_id=163915852, access_token=5e6b1299b1739c0bdff6ff636b341b6dc6c512215b26cb8c42ffe5d5dcf7dbb2ad7a5f7faf617d687182a, v=5.80]
+23:54:46.982 [Thread-1] INFO  com.oybek.hippo.service.Query - Response: {"response":{"key":"0bd6c34bd69fd2509966f0992c225aa774211fba","server":"https:\/\/lp.vk.com\/wh163915852","ts":248849}}
+23:54:46.999 [Thread-1] INFO  com.oybek.hippo.service.Query - Post: https://lp.vk.com/wh163915852 Params: [act=a_check, key=0bd6c34bd69fd2509966f0992c225aa774211fba, ts=248849, wait=25]
+23:54:57.715 [Thread-1] INFO  com.oybek.hippo.service.Query - Response: {"ts":"248850","updates":[{"type":"message_new","object":{"id":559482,"date":1553367297,"out":0,"user_id":213461412,"read_state":0,"title":"","body":"фыва"},"group_id":163915852}]}
