@@ -57,10 +57,10 @@ function on_start() {
 
                     var message = {
                         user : {
-                            id : update.from_id + "",
+                            id : update.user_id,
                             app : "vk"
                         },
-                        text : update.text
+                        text : update.body
                     };
 
                     if ('geo' in update) {
@@ -111,7 +111,7 @@ function on_message(message_str) {
     var message = JSON.parse(message_str);
     http.post("https://api.vk.com/method/messages.send",
         {
-            user_id : parseInt(message.user.id),
+            user_id : message.user.id,
             message : message.text,
             keyboard : getKeyboard(message),
             v : version,
