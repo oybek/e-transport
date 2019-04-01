@@ -4223,3 +4223,15 @@ insert into names(stop_id, names) values ('35785', 'Ясная');
 insert into stop (id, direction, latitude, longitude, type) values ('35998', 'Чкалова (ул. Шаумяна)', 56.814205, 60.571163, 'bus');
 insert into names(stop_id, names) values ('35998', 'Ясная (ул. Шаумяна)');
 
+insert into stop (id, direction, latitude, longitude, type) values ('35241', 'Фрунзе (Белинского)', 56.810833, 60.622757, 'bus');
+insert into names (stop_id, names) values ('35241', 'Щорса');
+
+insert into stop (id, direction, latitude, longitude, type) values ('35268', 'Авиационная', 56.809425, 60.623116, 'bus');
+insert into names (stop_id, names) values ('35268', 'Щорса');
+
+insert into stop (id, direction, latitude, longitude, type) values ('35350', 'ЦПКиО (Щорса)', 56.809944, 60.624100, 'bus');
+insert into names (stop_id, names) values ('35350', 'Щорса');
+
+insert into stop (id, direction, latitude, longitude, type) values ('35422', 'Автовокзал', 56.809860, 60.622147, 'bus');
+insert into names (stop_id, names) values ('35422', 'Щорса');
+
