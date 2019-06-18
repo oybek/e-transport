@@ -10,11 +10,6 @@ pipeline {
             steps {
                 sh 'cd etransport && mvn test'
             }
-            post {
-                always {
-                    junit 'etransport/target/surefire-reports/*.xml'
-                }
-            }
         }
     }
 }
