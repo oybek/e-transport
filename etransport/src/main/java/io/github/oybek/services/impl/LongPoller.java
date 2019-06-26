@@ -57,57 +57,61 @@ public class LongPoller implements Poller {
         start();
     }
 
+    private void getUpdates(AtomicInteger ts, GroupsApi groupsApi, GetLongPollServerRes longPollServer) throws Exception {
+        while (true) {
+            GetUpdatesRes updatesRes
+                    = groupsApi.getUpdates(
+                        longPollServer.getResponse().getServer(),
+                        new GetUpdatesReq()
+                                .setAct("a_check")
+                                .setKey(longPollServer.getResponse().getKey())
+                                .setTs(ts.get())
+                                .setWait(10));
+
+            if (updatesRes.getFailed().isPresent()) {
+                break;
+            } else {
+                ts.set(updatesRes.getTs());
+            }
+
+            logger.info(updatesRes.toString());
+            for (Event event : updatesRes.getUpdates()) {
+                switch (event.what()) {
+                    default:
+                        logger.info("Unknown event came");
+                        break;
+
+                    case EVENT_MESSAGE_NEW:
+                        Message message = event.asEventMessageNew().getObject();
+                        new Thread(() -> logic.onMessage(message)).start();
+                        break;
+                }
+            }
+        }
+    }
+
     public void start() {
         new Thread(() -> {
-            try {
-                GroupsApi groupsApi = new GroupsApiUnirestImpl("https://api.vk.com/method/groups.");
+            GroupsApi groupsApi = new GroupsApiUnirestImpl("https://api.vk.com/method/groups.");
 
-                GetLongPollServerReq getLongPollServerReq
-                        = new GetLongPollServerReq()
-                            .setGroupId(groupId)
-                            .setAccessToken(accessToken)
-                            .setV(version);
+            GetLongPollServerReq getLongPollServerReq
+                    = new GetLongPollServerReq()
+                        .setGroupId(groupId)
+                        .setAccessToken(accessToken)
+                        .setV(version);
 
-                GetLongPollServerRes longPollServer
-                        = groupsApi.getLongPollServer(getLongPollServerReq);
+            while (true) {
+                try {
+                    GetLongPollServerRes longPollServer = groupsApi.getLongPollServer(getLongPollServerReq);
 
-                logger.info(longPollServer.toString());
+                    logger.info(longPollServer.toString());
 
-                AtomicInteger ts = new AtomicInteger(longPollServer.getResponse().getTs());
+                    AtomicInteger ts = new AtomicInteger(longPollServer.getResponse().getTs());
 
-                while (true) {
-                    GetUpdatesRes updatesRes
-                            = groupsApi.getUpdates(
-                            longPollServer.getResponse().getServer(),
-                            new GetUpdatesReq()
-                                    .setAct("a_check")
-                                    .setKey(longPollServer.getResponse().getKey())
-                                    .setTs(ts.get())
-                                    .setWait(10));
-
-                    if (updatesRes.getFailed().isPresent()) {
-                        longPollServer = groupsApi.getLongPollServer(getLongPollServerReq);
-                        continue;
-                    } else {
-                        ts.set(updatesRes.getTs());
-                    }
-
-                    logger.info(updatesRes.toString());
-                    for (Event event : updatesRes.getUpdates()) {
-                        switch (event.what()) {
-                            default:
-                                logger.info("Unknown event came");
-                                break;
-
-                            case EVENT_MESSAGE_NEW:
-                                Message message = event.asEventMessageNew().getObject();
-                                new Thread(() -> logic.onMessage(message)).start();
-                                break;
-                        }
-                    }
+                    getUpdates(ts, groupsApi, longPollServer);
+                } catch (Exception e) {
+                    System.out.println(e.toString());
                 }
-            } catch (Exception e) {
-                logger.info(e.toString());
             }
         }).start();
     }
