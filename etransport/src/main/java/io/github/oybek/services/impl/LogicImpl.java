@@ -52,7 +52,6 @@ public class LogicImpl implements Logic {
     }
 
     @Override
-    @Transactional
     public void onMessage(io.github.oybek.lib.vk.Message message) {
         String text = "";
 

@@ -24,7 +24,7 @@ public class Stop {
     @Column(name = "type")
     private String type;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "names", joinColumns = @JoinColumn(name = "stop_id"))
     private List<String> names;
 
@@ -41,5 +41,5 @@ public class Stop {
     private Timestamp updated;
 
     @OneToMany(mappedBy = "stop", cascade = CascadeType.ALL)
-    private List<Reach> reaches;
+    private volatile List<Reach> reaches;
 }

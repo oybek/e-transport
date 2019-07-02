@@ -1,20 +1,15 @@
 package io.github.oybek.services.impl;
 
 import com.sun.javafx.geom.Vec2d;
-import com.sun.javafx.geom.Vec2f;
 import io.github.oybek.entities.Stop;
-import io.github.oybek.repositories.ReachRepository;
 import io.github.oybek.repositories.StopRepository;
 import io.github.oybek.services.StopService;
 import javafx.util.Pair;
 import org.springframework.stereotype.Component;
 
-import javax.transaction.Transactional;
+import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -22,16 +17,32 @@ public class StopServiceImpl implements StopService {
 
     private final int updateTime = 30000;
 
-    private ReachRepository reachRepository;
     private StopRepository stopRepository;
     private Algorithm algorithm;
     private Ettu ettu;
 
-    StopServiceImpl(ReachRepository reachRepository, StopRepository stopRepository, Algorithm algorithm, Ettu ettu) {
-        this.reachRepository = reachRepository;
+    private List<Stop> stops;
+
+    StopServiceImpl(StopRepository stopRepository, Algorithm algorithm, Ettu ettu) {
         this.stopRepository = stopRepository;
         this.algorithm = algorithm;
         this.ettu = ettu;
+    }
+
+    @PostConstruct
+    public void init() {
+        this.stops = getListFromIterator(stopRepository.findAll().iterator());
+    }
+
+    private static <T> List<T> getListFromIterator(Iterator<T> iterator) {
+        // Create an empty list
+        List<T> list = new ArrayList<>();
+
+        // Add each element of iterator to the List
+        iterator.forEachRemaining(list::add);
+
+        // Return the List
+        return list;
     }
 
     private List<Stop> findStopsByNameFromList(String name, List<Stop> stops) {
@@ -76,23 +87,24 @@ public class StopServiceImpl implements StopService {
         return stops
                 .stream()
                 .peek(stop -> {
-                    if (stop.getUpdated() == null || System.currentTimeMillis() - stop.getUpdated().getTime() > updateTime) {
-                        reachRepository.deleteByStop(stop);
+                    final long currentTime = System.currentTimeMillis();
+                    if (stop.getUpdated() == null || currentTime - stop.getUpdated().getTime() > updateTime) {
                         stop.setReaches(ettu.getReaches(stop));
-                        stop.setUpdated(new Timestamp(System.currentTimeMillis()));
-                        stopRepository.save(stop);
+                        stop.setUpdated(new Timestamp(currentTime));
                     }
                 })
                 .collect(Collectors.toList());
     }
 
     private List<Stop> findStopsByName(String name, String type) {
-        List<Stop> stops = findStopsByNameFromList(name, stopRepository.findAllByType(type));
-        return updateReaches(stops);
+        final List<Stop> stops = this.stops.stream().filter(s -> s.getType().equals(type)).collect(Collectors.toList());
+        List<Stop> selectedStops = findStopsByNameFromList(name, stops);
+        return updateReaches(selectedStops);
     }
 
     private List<Stop> getJustStops(String name, String type) {
-        return findStopsByNameFromList(name, stopRepository.findAllByType(type));
+        final List<Stop> stops = this.stops.stream().filter(s -> s.getType().equals(type)).collect(Collectors.toList());
+        return findStopsByNameFromList(name, stops);
     }
 
     @Override
@@ -111,35 +123,35 @@ public class StopServiceImpl implements StopService {
     }
 
     @Override
-    @Transactional
     public List<Stop> findBusStopsByName(String name) {
         return findStopsByName(name, "bus");
     }
 
     @Override
-    @Transactional
     public List<Stop> findTramStopsByName(String name) {
         return findStopsByName(name, "tram");
     }
 
     @Override
-    @Transactional
     public List<Stop> findTrollStopsByName(String name) {
         return findStopsByName(name, "troll");
     }
 
     @Override
     public Stop findNearestBusStops(Vec2d pos) {
-        return findNearestStop(pos, stopRepository.findAllByType("bus"));
+        final List<Stop> busStops = this.stops.stream().filter(s -> s.getType().equals("bus")).collect(Collectors.toList());
+        return findNearestStop(pos, busStops);
     }
 
     @Override
     public Stop findNearestTramStops(Vec2d pos) {
-        return findNearestStop(pos, stopRepository.findAllByType("tram"));
+        final List<Stop> tramStops = this.stops.stream().filter(s -> s.getType().equals("tram")).collect(Collectors.toList());
+        return findNearestStop(pos, tramStops);
     }
 
     @Override
     public Stop findNearestTrollStops(Vec2d pos) {
-        return findNearestStop(pos, stopRepository.findAllByType("troll"));
+        final List<Stop> trollStops = this.stops.stream().filter(s -> s.getType().equals("troll")).collect(Collectors.toList());
+        return findNearestStop(pos, trollStops);
     }
 }
