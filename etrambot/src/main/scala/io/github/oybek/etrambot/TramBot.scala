@@ -1,19 +1,26 @@
 package io.github.oybek.etrambot
 
-import cats.effect.Sync
+import cats.Monad
+import cats.effect.{Concurrent, IO, Sync}
+import io.github.oybek.etrambot.repo.{DoobieRepo, Repo}
+import monix.eval.Task
 import telegramium.bots.client.Api
 
-class TramBot[F[_]](bot: Api[F])(implicit syncF: Sync[F]) extends LongPollGate[F](bot) {
+import scala.concurrent.duration.Duration
+
+class TramBot[F[_]](bot: Api[F], repo: Repo[F])(implicit syncF: Sync[F], F: Concurrent[F]) extends LongPollGate[F](bot) {
 
   import cats.syntax.functor._
   import telegramium.bots._
   import telegramium.bots.client._
 
   override def onMessage(msg: Message): F[Unit] = {
-    bot.sendMessage(SendMessageReq(
-      chatId = ChatIntId(msg.chat.id),
-      text = msg.text.getOrElse("NO_TEXT"),
-    )).void
+    repo.findAll.take(3).evalMap { stop =>
+      bot.sendMessage(SendMessageReq(
+        chatId = ChatIntId(msg.chat.id),
+        text = stop.toString,
+      )).void
+    }.compile.drain
   }
 
   override def onInlineQuery(query: InlineQuery): F[Unit] = {
