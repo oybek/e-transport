@@ -8,6 +8,8 @@ import javafx.util.Pair;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.transaction.Transactional;
+import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,8 +32,24 @@ public class StopServiceImpl implements StopService {
     }
 
     @PostConstruct
-    public void init() {
+    @Transactional
+    public void init() throws Exception {
         this.stops = getListFromIterator(stopRepository.findAll().iterator());
+
+        PrintWriter out = new PrintWriter("/tmp/inserts.sql");
+        for (Stop stop : stops) {
+            String output =
+                    "insert into stop values (" +
+                    "'" + stop.getId() + "', " +
+                    "'" + String.join("|", stop.getNames()) + "', " +
+                    "'" + stop.getDirection() + "', " +
+                    + stop.getLatitude() + ", " +
+                    + stop.getLongitude() + ", " +
+                    "'" + stop.getType() + "');";
+            out.println(output);
+        }
+        out.flush();
+        System.out.println("done");
     }
 
     private static <T> List<T> getListFromIterator(Iterator<T> iterator) {

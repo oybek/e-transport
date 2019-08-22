@@ -3,7 +3,7 @@ package io.github.oybek.etrambot
 import cats.effect.Sync
 import telegramium.bots.client.Api
 
-class Gatetg[F[_]](bot: Api[F])(implicit syncF: Sync[F]) extends LongPollGate[F](bot) {
+class TramBot[F[_]](bot: Api[F])(implicit syncF: Sync[F]) extends LongPollGate[F](bot) {
 
   import cats.syntax.functor._
   import telegramium.bots._

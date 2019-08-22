@@ -18,7 +18,7 @@ object Application extends App {
   BlazeClientBuilder[Task](global).resource.use { httpClient =>
     val http = Logger(logBody = true, logHeaders = true)(httpClient)
     val bot = new ApiHttp4sImp(http, baseUrl = baseUrl)
-    val echoBot = new Gatetg(bot)
+    val echoBot = new TramBot(bot)
     echoBot.start()
   }.runSyncUnsafe(Duration.Inf)
 
