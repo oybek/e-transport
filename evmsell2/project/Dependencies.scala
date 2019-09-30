@@ -20,6 +20,7 @@ object Dependencies {
     val uPickle    = "0.7.1"
     val javaFmt    = "1.7"
     val junit      = "4.12"
+    val pureConfig = "0.10.2"
   }
 
   val monix      = "io.monix" %% "monix" % V.monix
@@ -30,6 +31,7 @@ object Dependencies {
   val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
   val catsMtl    = "org.typelevel" %% "cats-mtl-core" % V.catsMtl
   val scalaTest  = "org.scalatest" %% "scalatest" % V.scalaTest % Test
+  val pureConfig = "com.github.pureconfig" %% "pureconfig" % V.pureConfig
 
   val circe = Seq(
     "io.circe" %% "circe-core"           % V.circe,
@@ -63,6 +65,7 @@ object Dependencies {
     catsCore,
     catsEffect,
     catsMtl,
-    scalaTest
+    scalaTest,
+    pureConfig
   ) ++ circe ++ http4s ++ logger ++ uPickle
 }
