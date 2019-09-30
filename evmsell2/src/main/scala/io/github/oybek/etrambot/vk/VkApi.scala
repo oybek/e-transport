@@ -2,7 +2,7 @@ package io.github.oybek.etrambot.vk
 
 import cats.implicits._
 import cats.MonadError
-import cats.effect.{ConcurrentEffect, ContextShift}
+import cats.effect.{ConcurrentEffect, ContextShift, Sync}
 import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe._
@@ -14,6 +14,8 @@ import scala.concurrent.ExecutionContext
 trait VkApi[F[_]] {
   def getLongPollServer(getLongPollServerReq: GetLongPollServerReq): F[GetLongPollServerRes]
   def poll(pollReq: PollReq): F[PollRes]
+
+  def sendMessage(sendMessageReq: SendMessageReq): F[SendMessageRes]
 }
 
 class VkApiImpl[F[_]: ConcurrentEffect: ContextShift](client: Client[F])
@@ -35,6 +37,16 @@ class VkApiImpl[F[_]: ConcurrentEffect: ContextShift](client: Client[F])
       uri <- F.fromEither[Uri](Uri.fromString(s"${pollReq.toRequestStr}"))
       req = Request[F]().withMethod(GET).withUri(uri)
       res <- client.expect(req)(jsonOf[F, PollRes])
+    } yield res
+  }
+
+  override def sendMessage(sendMessageReq: SendMessageReq): F[SendMessageRes] = {
+    for {
+      uri <- F.fromEither[Uri](Uri.fromString(s"$methodUrl/messages.send?${sendMessageReq.toRequestStr}"))
+      req = Request[F]()
+        .withMethod(POST)
+        .withUri(uri)
+      res <- client.expect(req)(jsonOf[F, SendMessageRes])
     } yield res
   }
 }
