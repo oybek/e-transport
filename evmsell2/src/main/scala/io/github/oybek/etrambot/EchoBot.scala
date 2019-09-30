@@ -21,13 +21,32 @@ class EchoBot[F[_]: Sync](httpClient: Client[F],
     } yield ()
 
   override def onWallPostNew(wallPostNew: WallPostNew): F[Unit] =
-    for {
-      _ <- vkApi.sendMessage(SendMessageReq(
-        userId = wallPostNew.signerId,
-        message = "Ваша запись одобрена ",
-        version = getLongPollServerReq.version,
-        accessToken = getLongPollServerReq.accessToken,
-        attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
-      ))
-    } yield ()
+    wallPostNew.postType match {
+      case Some("suggest") =>
+        for {
+          _ <- Sync[F].delay { println(wallPostNew.toString) }
+          _ <- vkApi.sendMessage(SendMessageReq(
+            userId = 213461412,
+            message = "Новая запись на модерацию",
+            version = getLongPollServerReq.version,
+            accessToken = getLongPollServerReq.accessToken,
+            attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
+          ))
+        } yield ()
+
+      case Some("post") =>
+        for {
+          _ <- Sync[F].delay { println(wallPostNew.toString) }
+          _ <- vkApi.sendMessage(SendMessageReq(
+            userId = wallPostNew.signerId.get,
+            message = "Ваша запись одобрена",
+            version = getLongPollServerReq.version,
+            accessToken = getLongPollServerReq.accessToken,
+            attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
+          ))
+        } yield ()
+
+      case _ =>
+        Sync[F].delay().void
+    }
 }

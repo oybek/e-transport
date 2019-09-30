@@ -21,6 +21,8 @@ object Dependencies {
     val javaFmt    = "1.7"
     val junit      = "4.12"
     val pureConfig = "0.10.2"
+    val flyway     = "5.2.4"
+    val doobie     = "0.5.4"
   }
 
   val monix      = "io.monix" %% "monix" % V.monix
@@ -32,6 +34,13 @@ object Dependencies {
   val catsMtl    = "org.typelevel" %% "cats-mtl-core" % V.catsMtl
   val scalaTest  = "org.scalatest" %% "scalatest" % V.scalaTest % Test
   val pureConfig = "com.github.pureconfig" %% "pureconfig" % V.pureConfig
+  val flyway     = "org.flywaydb" % "flyway-core" % V.flyway
+
+  val doobie = Seq(
+    "org.tpolecat"          %% "doobie-core"          % V.doobie,
+    "org.tpolecat"          %% "doobie-postgres"      % V.doobie,
+    "org.tpolecat"          %% "doobie-hikari"        % V.doobie
+  )
 
   val circe = Seq(
     "io.circe" %% "circe-core"           % V.circe,
@@ -66,6 +75,7 @@ object Dependencies {
     catsEffect,
     catsMtl,
     scalaTest,
-    pureConfig
-  ) ++ circe ++ http4s ++ logger ++ uPickle
+    pureConfig,
+    flyway
+  ) ++ circe ++ http4s ++ logger ++ uPickle ++ doobie
 }

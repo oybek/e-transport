@@ -27,7 +27,7 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
         server = longPollServer.server,
         key = longPollServer.key,
         ts = longPollServer.ts,
-        waitt = 9)
+        waitt = 5)
       _ <- poll(pollReq)
     } yield ()
 
