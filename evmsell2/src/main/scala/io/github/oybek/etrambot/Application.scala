@@ -29,7 +29,8 @@ object Application extends App {
           userId = 213461412,
           message = "hello",
           accessToken = accessToken,
-          version = "5.80"
+          version = "5.80",
+          attachment = "wall-177134356_29"
         ))
         _ <- poll(pollReq.copy(ts = pollRes.ts))
       } yield ()
