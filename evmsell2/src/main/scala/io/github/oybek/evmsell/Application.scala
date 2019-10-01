@@ -18,7 +18,7 @@ object Application extends App {
       _ <- DB.initialize(transactor)
       _ <- BlazeClientBuilder[Task](global).resource.use { client =>
         val api = new VkApiImpl[Task](client)
-        new EchoBot[Task](client, api, config.getLongPollServerReq, wallPostHandler).start
+        new Bot[Task](client, api, config.getLongPollServerReq, wallPostHandler).start
       }
     } yield ()
 

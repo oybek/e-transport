@@ -6,10 +6,10 @@ import io.github.oybek.evmsell.service.WallPostHandler
 import io.github.oybek.evmsell.vk._
 import org.http4s.client.Client
 
-class EchoBot[F[_]: Sync](httpClient: Client[F],
-                          vkApi: VkApi[F],
-                          getLongPollServerReq: GetLongPollServerReq,
-                          wallPostHandler: WallPostHandler)
+class Bot[F[_]: Sync](httpClient: Client[F],
+                      vkApi: VkApi[F],
+                      getLongPollServerReq: GetLongPollServerReq,
+                      wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
   override def onMessageNew(message: MessageNew): F[Unit] =
@@ -39,13 +39,23 @@ class EchoBot[F[_]: Sync](httpClient: Client[F],
       case Some("post") =>
         for {
           _ <- Sync[F].delay { println(wallPostNew.toString) }
-          _ <- vkApi.sendMessage(SendMessageReq(
-            userId = wallPostNew.signerId.get,
-            message = "Ваше предложение опубликовано",
-            version = getLongPollServerReq.version,
-            accessToken = getLongPollServerReq.accessToken,
-            attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
-          ))
+          _ <- wallPostNew.signerId map { signerId =>
+            vkApi.sendMessage(SendMessageReq(
+              userId = signerId,
+              message = "Ваше предложение опубликовано",
+              version = getLongPollServerReq.version,
+              accessToken = getLongPollServerReq.accessToken,
+              attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
+            ))
+          } getOrElse {
+            vkApi.sendMessage(SendMessageReq(
+              userId = 213461412,
+              message = "Ты опубликовал предложение без подписи! Поправь",
+              version = getLongPollServerReq.version,
+              accessToken = getLongPollServerReq.accessToken,
+              attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
+            ))
+          }
         } yield ()
 
       case _ =>
