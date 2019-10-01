@@ -14,7 +14,7 @@ case class WallPostHandler(model: Model) {
     val text = wallPost.text.toLowerCase
     Offer(
       id = wallPost.id,
-      fromId = wallPost.signerId.get,
+      fromId = wallPost.signerId.getOrElse(0),
       date = wallPost.date,
       text = wallPost.text,
       price = getPrice(text),

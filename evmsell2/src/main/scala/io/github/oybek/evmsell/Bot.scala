@@ -2,12 +2,14 @@ package io.github.oybek.evmsell
 
 import cats.implicits._
 import cats.effect.Sync
+import io.github.oybek.evmsell.db.repository.OfferRepository
 import io.github.oybek.evmsell.service.WallPostHandler
 import io.github.oybek.evmsell.vk._
 import org.http4s.client.Client
 
 class Bot[F[_]: Sync](httpClient: Client[F],
                       vkApi: VkApi[F],
+                      offerRepository: OfferRepository[F],
                       getLongPollServerReq: GetLongPollServerReq,
                       wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
@@ -39,6 +41,8 @@ class Bot[F[_]: Sync](httpClient: Client[F],
       case Some("post") =>
         for {
           _ <- Sync[F].delay { println(wallPostNew.toString) }
+          offer = wallPostHandler.wallPostToOffer(wallPostNew)
+          _ <- offerRepository.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
             vkApi.sendMessage(SendMessageReq(
               userId = signerId,
