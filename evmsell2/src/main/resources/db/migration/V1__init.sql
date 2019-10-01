@@ -1,8 +1,8 @@
 
 CREATE TABLE offer (
   id INTEGER PRIMARY KEY,
-  owner_id INTEGER,
-  created TIMESTAMP,
+  from_id INTEGER,
+  created INTEGER,
   ttype TEXT,
   text TEXT,
   price INTEGER,

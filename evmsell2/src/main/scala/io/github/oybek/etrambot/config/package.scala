@@ -5,9 +5,14 @@ import io.github.oybek.etrambot.vk.GetLongPollServerReq
 import pureconfig.error.ConfigReaderException
 
 package object config {
+  case class Model(thingsNames: Map[String, List[String]]) {
+    def isGood: Boolean =
+      thingsNames.values.forall(_.nonEmpty)
+  }
+
   case class DatabaseConfig(driver: String, url: String, user: String, password: String)
 
-  case class Config(getLongPollServerReq: GetLongPollServerReq, database: DatabaseConfig)
+  case class Config(getLongPollServerReq: GetLongPollServerReq, database: DatabaseConfig, model: Model)
 
   object Config {
     import pureconfig._
@@ -18,7 +23,9 @@ package object config {
         loadConfig[Config](ConfigFactory.load(configFile))
       }.flatMap {
         case Left(e) => Sync[F].raiseError[Config](new ConfigReaderException[Config](e))
-        case Right(config) => Sync[F].delay(config)
+        case Right(config) =>
+          if (!config.model.isGood) Sync[F].raiseError[Config](new Throwable("things-names must contains nonempty lists"))
+          else Sync[F].delay(config)
       }
     }
   }
