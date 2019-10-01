@@ -7,5 +7,6 @@ CREATE TABLE offer (
   text TEXT,
   price INTEGER,
   latitude FLOAT,
-  longitude FLOAT
+  longitude FLOAT,
+  sold BOOLEAN
 );

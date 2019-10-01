@@ -7,4 +7,5 @@ case class Offer(id: Long,
                  text: String,
                  price: Option[Long],
                  latitude: Option[Float] = None,
-                 longitude: Option[Float] = None)
+                 longitude: Option[Float] = None,
+                 sold: Boolean = false)

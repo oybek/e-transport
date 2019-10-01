@@ -6,7 +6,7 @@ object Compiler {
   val settings = Seq(
     crossScalaVersions := Seq("2.12.8"),
     scalacOptions ++= options,
-    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8"),
+    addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
   )
 
   val options = Seq(

@@ -27,7 +27,7 @@ case class WallPostHandler(model: Model) {
   private def getPrice(text: String): Option[Long] =
     "[0-9]+".r.findFirstIn(text).map(_.toLong)
 
-  private def getTType(text: String): Option[String] =
+  def getTType(text: String): Option[String] =
     namesToTypes.find {
       case (name, _) => text.contains(name)
     }.map(_._2)
