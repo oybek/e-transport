@@ -1,4 +1,4 @@
-package io.github.oybek.etrambot.vk
+package io.github.oybek.evmsell.vk
 
 case class PollReq(server: String,
                    act: String = "a_check",

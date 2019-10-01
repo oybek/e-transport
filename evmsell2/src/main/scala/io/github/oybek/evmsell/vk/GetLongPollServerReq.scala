@@ -1,4 +1,4 @@
-package io.github.oybek.etrambot.vk
+package io.github.oybek.evmsell.vk
 
 case class GetLongPollServerReq(groupId: String, accessToken: String, version: String) {
   def toRequestStr: String = {

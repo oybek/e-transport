@@ -1,13 +1,15 @@
-package io.github.oybek.etrambot
+package io.github.oybek.evmsell
 
 import cats.implicits._
 import cats.effect.Sync
-import io.github.oybek.etrambot.vk._
+import io.github.oybek.evmsell.service.WallPostHandler
+import io.github.oybek.evmsell.vk._
 import org.http4s.client.Client
 
 class EchoBot[F[_]: Sync](httpClient: Client[F],
                           vkApi: VkApi[F],
-                          getLongPollServerReq: GetLongPollServerReq)
+                          getLongPollServerReq: GetLongPollServerReq,
+                          wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
   override def onMessageNew(message: MessageNew): F[Unit] =
@@ -39,7 +41,7 @@ class EchoBot[F[_]: Sync](httpClient: Client[F],
           _ <- Sync[F].delay { println(wallPostNew.toString) }
           _ <- vkApi.sendMessage(SendMessageReq(
             userId = wallPostNew.signerId.get,
-            message = "Ваша запись одобрена",
+            message = "Ваше предложение опубликовано",
             version = getLongPollServerReq.version,
             accessToken = getLongPollServerReq.accessToken,
             attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")

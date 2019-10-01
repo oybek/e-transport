@@ -1,4 +1,4 @@
-package io.github.oybek.etrambot.db
+package io.github.oybek.evmsell.db
 
 import cats.effect.{Async, Sync}
 import config.DatabaseConfig

@@ -1,4 +1,4 @@
-package io.github.oybek.etrambot.vk
+package io.github.oybek.evmsell.vk
 
 import io.circe.{Decoder, DecodingFailure, HCursor}
 import io.circe.generic.extras.Configuration
