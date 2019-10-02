@@ -56,7 +56,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
     for {
       states <- userStates.get
       offers = states.getOrElse(message.fromId, List())
-      _ <- message.text match {
+      _ <- message.text.toLowerCase match {
         case "еще" if offers.length >= 2 =>
           val rest = offers.tail
           for {

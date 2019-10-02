@@ -27,12 +27,12 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
         server = longPollServer.server,
         key = longPollServer.key,
         ts = longPollServer.ts,
-        waitt = 5)
+        waitt = 20)
       _ <- poll(pollReq)
     } yield ()
 
   final def onEvent(event: Event): F[Unit] = event match {
-    case messageNew: MessageNew => onMessageNew(messageNew)
+    case messageNew: MessageNew => onMessageNew(messageNew.copy(text = messageNew.text.take(40).toLowerCase))
     case wallPostNew: WallPostNew => onWallPostNew(wallPostNew)
   }
 

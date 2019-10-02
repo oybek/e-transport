@@ -9,8 +9,13 @@ import io.github.oybek.evmsell.model.Offer
 import io.github.oybek.evmsell.service.WallPostHandler
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.client.blaze.{BlazeClientBuilder, BlazeClientConfig}
 import io.github.oybek.evmsell.vk.{GetLongPollServerReq, VkApiImpl}
+
+import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit
+
+import org.http4s.client.middleware.Logger
 
 object Application extends App {
 
@@ -22,16 +27,19 @@ object Application extends App {
       wallPostHandler = WallPostHandler(config.model)
       offerRepository = OfferRepository(transactor)
       _ <- DB.initialize(transactor)
-      _ <- BlazeClientBuilder[Task](global).resource.use { client =>
-        Bot[Task](
-          client,
-          userStates,
-          new VkApiImpl[Task](client),
-          offerRepository,
-          config.getLongPollServerReq,
-          wallPostHandler
-        ).start
-      }
+      _ <- BlazeClientBuilder[Task](global)
+        .withResponseHeaderTimeout(FiniteDuration(60, TimeUnit.SECONDS))
+        .resource.use { httpClient =>
+          val client = Logger(logHeaders = false, logBody = true)(httpClient)
+          Bot[Task](
+            client,
+            userStates,
+            new VkApiImpl[Task](client),
+            offerRepository,
+            config.getLongPollServerReq,
+            wallPostHandler
+          ).start
+        }
     } yield ()
 
   root.runSyncUnsafe()
