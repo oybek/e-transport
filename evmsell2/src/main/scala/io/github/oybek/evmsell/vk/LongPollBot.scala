@@ -22,7 +22,7 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
             _ <- poll(pollReq.copy(ts = ts))
           } yield ()
 
-        case PollFailed(Some(ts), _) => start
+        case PollFailed(_, _) => start
       }
     } yield ()
 

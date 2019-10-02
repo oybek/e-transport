@@ -29,19 +29,23 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
 
   def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
     for {
-      offers <- offerRepository.selectByTType(thing)
+      offers <- offerRepository.selectByTType(thing).map { offs =>
+        val from = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
+        val to = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(1000000L)
+        offs.filter(_.price.exists(x => x >= from && x <= to))
+      }
       _ <- offers match {
         case Nil =>
           vkApi.sendMessage(SendMessageReq(
             userId = message.fromId,
-            message = s"Нет объявлений по данному товару",
+            message = s"Не нашел объявлений по этому товару",
             version = getLongPollServerReq.version,
             accessToken = getLongPollServerReq.accessToken,
           ))
         case offersNonEmpty =>
           vkApi.sendMessage(SendMessageReq(
             userId = message.fromId,
-            message = s"Я нашел ${offers.length} объявлений, покажу первую.\nНапиши 'еще' я скину следующие",
+            message = s"Я нашел ${offers.length} объявлений\nНапиши 'еще' я скину следующее",
             version = getLongPollServerReq.version,
             accessToken = getLongPollServerReq.accessToken,
             attachment = Some(s"wall-${getLongPollServerReq.groupId}_${offersNonEmpty.head.id}")
@@ -65,16 +69,27 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
             }.void
             _ <- sendMessage(
               message.fromId,
-              if (rest.length == 1) "Последнее объявление" else s"Еще есть ${rest.length-1} объявлений в списке",
+              if (rest.length == 1) "Последнее объявление" else s"Осталось ${rest.length-1}",
               Some(s"wall-${getLongPollServerReq.groupId}_${rest.head.id}")
             )
           } yield ()
 
+        case "помощь" =>
+          sendMessage(message.fromId,
+            s"""
+               |Ты можешь написать:
+               |Ноут от 5000 до 10000
+               |или просто:
+               |Системник до 20000
+               |И я найду подходящие предложения
+               |""".stripMargin
+          )
+
         case "еще" =>
-          sendMessage(message.fromId, s"Какой товар ищешь? (Моник, мышку, блок питания)")
+          sendMessage(message.fromId, s"Какой товар ищешь? (Моник, мышку, блок питания и т. д.)")
 
         case _ =>
-          sendMessage(message.fromId, s"Не очень понял что ты ищешь $sadSmile")
+          sendMessage(message.fromId, s"Не очень понял что ты ищешь $sadSmile\nнапиши 'помощь' - я поскажу что я умею")
       }
     } yield ()
 
