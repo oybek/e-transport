@@ -15,8 +15,15 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
   final def poll(pollReq: PollReq): F[Unit] =
     for {
       pollRes <- vkApi.poll(pollReq)
-      _ <- pollRes.updates.traverse(onEvent) // TODO: use fibers
-      _ <- poll(pollReq.copy(ts = pollRes.ts))
+      _ <- pollRes match {
+        case PollWithUpdates(ts, updates) =>
+          for {
+            _ <- updates.traverse(onEvent)
+            _ <- poll(pollReq.copy(ts = ts))
+          } yield ()
+
+        case PollFailed(Some(ts), _) => start
+      }
     } yield ()
 
   final def start: F[Unit] =

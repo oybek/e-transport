@@ -1,5 +1,9 @@
 package io.github.oybek.evmsell.vk
 
+import cats.syntax.functor._
+import io.circe.generic.auto._
+import io.circe.Decoder
+
 case class PollReq(server: String,
                    act: String = "a_check",
                    key: String,
@@ -18,4 +22,15 @@ case class PollReq(server: String,
   }
 }
 
-case class PollRes(ts: Long, updates: List[Event])
+sealed trait PollRes
+case class PollWithUpdates(ts: Long, updates: List[Event]) extends PollRes
+case class PollFailed(ts: Option[Long], failed: Long) extends PollRes
+
+object PollRes {
+  implicit val PollResDecoder: Decoder[PollRes] =
+    List[Decoder[PollRes]](
+      Decoder[PollWithUpdates].widen,
+      Decoder[PollFailed].widen
+    ).reduce(_ or _)
+}
+
