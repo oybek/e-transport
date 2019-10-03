@@ -69,7 +69,8 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         val to = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(1000000L)
         offs.filter(offer =>
           offer.price.exists(x => x >= from && x <= to) &&
-          offer.coord.exists(_.distKmTo(userPos) < 50)
+          offer.coord.exists(_.distKmTo(userPos) < 50) &&
+          !offer.sold
         )
       }
       _ <- offers match {
@@ -139,6 +140,9 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
 
         case "еще" =>
           sendMessage(message.fromId, s"Какой товар ищешь? (Моник, мышку, блок питания и т. д.)")
+
+        case "мед" =>
+          sendMessage(message.fromId, s"Где?!")
 
         case _ =>
           sendMessage(message.fromId,
@@ -223,7 +227,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
       case "продан" => for {
         offerOpt <- offerRepository.selectById(wallReplyNew.postId)
         _ <- offerOpt.filter { offer =>
-          offer.fromId == wallReplyNew.fromId
+          offer.fromId == wallReplyNew.fromId && !offer.sold
         }.traverse { offer =>
           for {
             _ <- offerRepository.sold(offer.id)
