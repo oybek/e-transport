@@ -218,4 +218,14 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         Sync[F].delay().void
     }
 
+  override def onWallReplyNew(wallReplyNew: WallReplyNew): F[Unit] =
+    wallReplyNew.text.toLowerCase match {
+      case "продан" => for {
+        offerOpt <- offerRepository.selectById(wallReplyNew.postId)
+        _ <- offerOpt.filter { offer =>
+          offer.fromId == wallReplyNew.fromId
+        }.traverse(x => offerRepository.sold(x.id))
+      } yield()
+      case _ => Sync[F].delay().void
+    }
 }

@@ -41,8 +41,10 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
   final def onEvent(event: Event): F[Unit] = event match {
     case messageNew: MessageNew => onMessageNew(messageNew.copy(text = messageNew.text.take(40).toLowerCase))
     case wallPostNew: WallPostNew => onWallPostNew(wallPostNew)
+    case wallReplyNew: WallReplyNew => onWallReplyNew(wallReplyNew)
   }
 
   def onMessageNew(message: MessageNew): F[Unit]
   def onWallPostNew(wallPostNew: WallPostNew): F[Unit]
+  def onWallReplyNew(wallReplyNew: WallReplyNew): F[Unit]
 }

@@ -47,6 +47,12 @@ case class WallPostNew(id: Long,
                        postType: Option[String],
                        geo: Option[Geo]) extends Event
 
+case class WallReplyNew(id: Long,
+                        fromId: Long,
+                        text: String,
+                        postId: Long,
+                        date: Long) extends Event
+
 object Event {
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames
 
@@ -73,6 +79,7 @@ object Event {
         res <- typee match {
           case "message_new" => c.downField("object").as[MessageNew]
           case "wall_post_new" => c.downField("object").as[WallPostNew]
+          case "wall_reply_new" => c.downField("object").as[WallReplyNew]
           case eventType => Left(DecodingFailure(s"Unknown event type: $eventType", List()))
         }
       } yield res
