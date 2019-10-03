@@ -224,7 +224,20 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         offerOpt <- offerRepository.selectById(wallReplyNew.postId)
         _ <- offerOpt.filter { offer =>
           offer.fromId == wallReplyNew.fromId
-        }.traverse(x => offerRepository.sold(x.id))
+        }.traverse { offer =>
+          for {
+            _ <- offerRepository.sold(offer.id)
+            _ <- vkApi.wallComment(
+              WallCommentReq(
+                ownerId = -getLongPollServerReq.groupId.toLong,
+                postId = offer.id,
+                message = s"Продан за ${wallReplyNew.date - offer.date} секунд",
+                version = getLongPollServerReq.version,
+                accessToken = getLongPollServerReq.accessToken,
+              )
+            )
+          } yield ()
+        }
       } yield()
       case _ => Sync[F].delay().void
     }

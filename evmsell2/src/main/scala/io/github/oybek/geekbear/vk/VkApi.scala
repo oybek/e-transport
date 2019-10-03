@@ -16,6 +16,7 @@ trait VkApi[F[_]] {
   def poll(pollReq: PollReq): F[PollRes]
 
   def sendMessage(sendMessageReq: SendMessageReq): F[SendMessageRes]
+  def wallComment(wallCommentReq: WallCommentReq): F[WallCommentRes]
 }
 
 class VkApiImpl[F[_]: ConcurrentEffect: ContextShift](client: Client[F])
@@ -49,5 +50,14 @@ class VkApiImpl[F[_]: ConcurrentEffect: ContextShift](client: Client[F])
       res <- client.expect(req)(jsonOf[F, SendMessageRes])
     } yield res
   }
+
+  override def wallComment(wallCommentReq: WallCommentReq): F[WallCommentRes] =
+    for {
+      uri <- F.fromEither[Uri](Uri.fromString(s"$methodUrl/wall.createComment?${wallCommentReq.toRequestStr}"))
+      req = Request[F]()
+        .withMethod(POST)
+        .withUri(uri)
+      res <- client.expect(req)(jsonOf[F, WallCommentRes])
+    } yield res
 }
 
