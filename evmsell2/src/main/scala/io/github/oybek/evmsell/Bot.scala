@@ -45,7 +45,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
           wallPostHandler.getTType(message.text.toLowerCase) match {
             case Some(thing) => for {
               user <- userRepository.selectById(message.fromId)
-              _ <- user.map(_ => whenNewSearch(message)(thing)).getOrElse(
+              _ <- user.map(usr => whenNewSearch(message)(thing, usr._2)).getOrElse(
                 sendMessage(message.fromId, "Перед тем как начать поиск - надо отправить геолокацию")
               )
             } yield ()
@@ -55,12 +55,15 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
       }
     } yield ()
 
-  def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
+  def whenNewSearch(message: MessageNew)(thing: String, userPos: Coord): F[Unit] =
     for {
       offers <- offerRepository.selectByTType(thing).map { offs =>
         val from = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
         val to = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(1000000L)
-        offs.filter(_.price.exists(x => x >= from && x <= to))
+        offs.filter(offer =>
+          offer.price.exists(x => x >= from && x <= to) &&
+          offer.coord.exists(_.distKmTo(userPos) < 50)
+        )
       }
       _ <- offers match {
         case Nil =>
@@ -176,4 +179,5 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
       case _ =>
         Sync[F].delay().void
     }
+
 }
