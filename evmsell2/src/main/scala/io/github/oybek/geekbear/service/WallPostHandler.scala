@@ -2,7 +2,7 @@ package io.github.oybek.geekbear.service
 
 import config.Model
 import io.github.oybek.geekbear.model.Offer
-import io.github.oybek.geekbear.vk.WallPostNew
+import io.github.oybek.geekbear.vk.{Coord, WallPostNew}
 
 case class WallPostHandler(model: Model) {
 

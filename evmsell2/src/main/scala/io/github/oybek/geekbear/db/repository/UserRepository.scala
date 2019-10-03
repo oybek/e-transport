@@ -11,6 +11,7 @@ import io.github.oybek.geekbear.vk.Coord
 trait UserRepositoryAlgebra[F[_]] {
   def upsert(user: (Long, Coord)): F[Int]
   def selectById(id: Long): F[Option[(Long, Coord)]]
+  def coordById(id: Long): F[Option[Coord]]
 }
 
 case class UserRepository[F[_]: Monad](transactor: Transactor[F]) extends UserRepositoryAlgebra[F] {
@@ -22,6 +23,13 @@ case class UserRepository[F[_]: Monad](transactor: Transactor[F]) extends UserRe
     selectByIdSql(id).option.transact(transactor).map { xs =>
       xs.map {
         case (id, latitude, longitude) => id -> Coord(latitude, longitude)
+      }
+    }
+
+  override def coordById(id: Long): F[Option[Coord]] =
+    selectByIdSql(id).option.transact(transactor).map { xs =>
+      xs.map {
+        case (_, latitude, longitude) => Coord(latitude, longitude)
       }
     }
 

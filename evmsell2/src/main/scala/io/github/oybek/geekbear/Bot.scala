@@ -180,7 +180,20 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
       case Some("post") =>
         for {
           _ <- Sync[F].delay { println(wallPostNew.toString) }
+
+          userInfo = for {
+            userId <- wallPostNew.signerId
+            geo <- wallPostNew.geo
+          } yield userId -> geo.coordinates
+
+          _ <- userInfo.traverse(x => userRepository.upsert(x))
+          coord <- wallPostNew.signerId.flatTraverse(userRepository.coordById)
+
           offer = wallPostHandler.wallPostToOffer(wallPostNew)
+            .copy(
+              latitude = coord.map(_.latitude),
+              longitude = coord.map(_.longitude)
+            )
           _ <- offerRepository.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
             vkApi.sendMessage(SendMessageReq(
