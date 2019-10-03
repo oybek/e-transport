@@ -8,6 +8,7 @@ import io.github.oybek.evmsell.model.Offer
 import io.github.oybek.evmsell.service.WallPostHandler
 import io.github.oybek.evmsell.vk._
 import org.http4s.client.Client
+import org.slf4j.LoggerFactory
 
 case class Bot[F[_]: Sync](httpClient: Client[F],
                       userStates: Ref[F, Map[Long, List[Offer]]],
@@ -18,8 +19,13 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
                       wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
+  private val log = LoggerFactory.getLogger("bot")
+
   override def onMessageNew(message: MessageNew): F[Unit] =
     for {
+      _ <- Sync[F].delay {
+        log.info(s"Got message: $message")
+      }
       _ <- message.geo.map { geo =>
         for {
           _ <- userRepository.upsert(message.fromId -> geo.coordinates)
@@ -129,20 +135,24 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
     } yield ()
 
   private def sendMessage(to: Long, text: String, attachment: Option[String] = None): F[Unit] = {
-    vkApi.sendMessage(SendMessageReq(
+    val sendMessageReq = SendMessageReq(
       userId = to,
       message = text,
       version = getLongPollServerReq.version,
       accessToken = getLongPollServerReq.accessToken,
       attachment = attachment
-    )).void
+    )
+    for {
+      _ <- Sync[F].delay { log.info(s"Sending message: $sendMessageReq") }
+      _ <- vkApi.sendMessage(sendMessageReq).void
+    } yield ()
   }
 
   override def onWallPostNew(wallPostNew: WallPostNew): F[Unit] =
     wallPostNew.postType match {
       case Some("suggest") =>
         for {
-          _ <- Sync[F].delay { println(wallPostNew.toString) }
+          _ <- Sync[F].delay { log.info(s"Got new wallpost: $wallPostNew") }
           _ <- vkApi.sendMessage(SendMessageReq(
             userId = 213461412,
             message = "Новая запись на модерацию",

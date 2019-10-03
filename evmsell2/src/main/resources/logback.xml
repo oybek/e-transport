@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds" debug="false">
+    <contextName>evmsell</contextName>
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%d{ISO8601}] | %-5le | %-50lo{50} | [%.10thread] | %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <logger name="api-bank-service" level="DEBUG"/>
+</configuration>
