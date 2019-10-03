@@ -39,20 +39,21 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         if (message.text.toLowerCase == "начать") {
           sendMessage(message.fromId,
             """
-              |Привет Пользователь!
-              |Я бот сообщества "Продам Комп"
-              |Я храню в базе все объявления стены
-              |и помогу тебе в поиске
-              |Напиши 'помощь' - я напишу что умею
-              |И отправь свою геопозицию - чтобы я
-              |знал твой город (это нужно для поиска)
+              |Привет - Я Гик Медведь 🐻!
+              |В своей группе ВК я помогаю людям продать или купить компьютерную технику
+              |Я запомнил все объявления на стене и быстро найду нужное тебе
+              |Напиши 'помощь' и я подскажу что умею
               |""".stripMargin)
         } else {
           wallPostHandler.getTType(message.text.toLowerCase) match {
             case Some(thing) => for {
               user <- userRepository.selectById(message.fromId)
               _ <- user.map(usr => whenNewSearch(message)(thing, usr._2)).getOrElse(
-                sendMessage(message.fromId, "Перед тем как начать поиск - надо отправить геолокацию")
+                sendMessage(message.fromId,
+                  """
+                    |Перед тем как начать поиск - отправь геолокацию
+                    |Чтобы я знал в каком городе искать объявления
+                    |""".stripMargin)
               )
             } yield ()
             case None => whenNotSearch(message)
@@ -75,14 +76,23 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         case Nil =>
           vkApi.sendMessage(SendMessageReq(
             userId = message.fromId,
-            message = s"Не нашел объявлений по этому товару",
+            message = s"Не нашел объявлений по твоему запросу",
             version = getLongPollServerReq.version,
             accessToken = getLongPollServerReq.accessToken,
           ))
         case offersNonEmpty =>
+          def word(n: Int): String = n match {
+            case 1 => "объявление"
+            case 2|3|4 => "объявления"
+            case _ => "объявлений"
+          }
           vkApi.sendMessage(SendMessageReq(
             userId = message.fromId,
-            message = s"Я нашел ${offers.length} объявлений\nНапиши 'еще' я скину следующее",
+            message =
+              s"""
+                 |Я нашел ${offers.length} ${word(offers.length)}
+                 |${if (offers.length > 1) "Вот первое. Напиши 'еще' я скину следующее" else "Вот оно:" }
+                 |""".stripMargin,
             version = getLongPollServerReq.version,
             accessToken = getLongPollServerReq.accessToken,
             attachment = Some(s"wall-${getLongPollServerReq.groupId}_${offersNonEmpty.head.id}")
@@ -106,7 +116,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
             }.void
             _ <- sendMessage(
               message.fromId,
-              if (rest.length == 1) "Последнее объявление" else s"Осталось ${rest.length-1}",
+              if (rest.length == 1) "" else s"Еще ${rest.length-1} в списке",
               Some(s"wall-${getLongPollServerReq.groupId}_${rest.head.id}")
             )
           } yield ()
@@ -114,11 +124,16 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         case "помощь" =>
           sendMessage(message.fromId,
             s"""
+               |Я нахожу объявления по названию товара, например:
+               |Ноут, Системник или Видяха и т. д.
+               |
+               |Еще я умею фильтровать объявления по цене
                |Ты можешь написать:
                |Ноут от 5000 до 10000
-               |или просто:
+               |Или просто:
                |Системник до 20000
-               |И я найду подходящие предложения
+               |
+               |Объявления я ищу в твоем городе
                |""".stripMargin
           )
 
@@ -128,7 +143,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         case _ =>
           sendMessage(message.fromId,
             s"""
-               |Не понял что ты ищешь 😞
+               |Не понял что ты ищешь!
                |Напиши 'помощь' - я напишу что умею
                |""".stripMargin)
       }
@@ -170,7 +185,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
           _ <- wallPostNew.signerId map { signerId =>
             vkApi.sendMessage(SendMessageReq(
               userId = signerId,
-              message = "Ваше предложение опубликовано",
+              message = "Твое предложение опубликовано",
               version = getLongPollServerReq.version,
               accessToken = getLongPollServerReq.accessToken,
               attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")

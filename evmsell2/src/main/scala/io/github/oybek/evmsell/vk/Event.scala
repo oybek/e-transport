@@ -44,7 +44,6 @@ case class WallPostNew(id: Long,
                        date: Long,
                        text: String,
                        signerId: Option[Long],
-                       createdBy: Long,
                        postType: Option[String],
                        geo: Option[Geo]) extends Event
 
