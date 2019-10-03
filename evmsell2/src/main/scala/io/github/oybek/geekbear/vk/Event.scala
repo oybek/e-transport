@@ -1,4 +1,4 @@
-package io.github.oybek.evmsell.vk
+package io.github.oybek.geekbear.vk
 
 import io.circe.{Decoder, DecodingFailure, HCursor}
 import io.circe.generic.extras.Configuration

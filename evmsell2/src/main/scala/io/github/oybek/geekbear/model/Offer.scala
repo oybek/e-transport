@@ -1,6 +1,6 @@
-package io.github.oybek.evmsell.model
+package io.github.oybek.geekbear.model
 
-import io.github.oybek.evmsell.vk.Coord
+import io.github.oybek.geekbear.vk.Coord
 
 case class Offer(id: Long,
                  fromId: Long,

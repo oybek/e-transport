@@ -1,4 +1,4 @@
-package io.github.oybek.evmsell.db
+package io.github.oybek.geekbear.db
 
 import cats.effect.{Async, Sync}
 import config.DatabaseConfig

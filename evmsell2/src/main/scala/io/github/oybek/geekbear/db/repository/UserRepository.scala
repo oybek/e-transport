@@ -1,4 +1,4 @@
-package io.github.oybek.evmsell.db.repository
+package io.github.oybek.geekbear.db.repository
 
 import cats.implicits._
 import cats.Monad
@@ -6,7 +6,7 @@ import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.util.transactor.Transactor
 import doobie.util.update.Update0
-import io.github.oybek.evmsell.vk.Coord
+import io.github.oybek.geekbear.vk.Coord
 
 trait UserRepositoryAlgebra[F[_]] {
   def upsert(user: (Long, Coord)): F[Int]

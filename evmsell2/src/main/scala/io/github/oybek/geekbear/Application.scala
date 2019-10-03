@@ -1,16 +1,16 @@
-package io.github.oybek.evmsell
+package io.github.oybek.geekbear
 
 import cats.implicits._
 import cats.effect.concurrent.Ref
 import config.Config
-import io.github.oybek.evmsell.db.DB
-import io.github.oybek.evmsell.db.repository.{OfferRepository, UserRepository}
-import io.github.oybek.evmsell.model.Offer
-import io.github.oybek.evmsell.service.WallPostHandler
+import io.github.oybek.geekbear.db.DB
+import io.github.oybek.geekbear.db.repository.{OfferRepository, UserRepository}
+import io.github.oybek.geekbear.model.Offer
+import io.github.oybek.geekbear.service.WallPostHandler
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import org.http4s.client.blaze.{BlazeClientBuilder, BlazeClientConfig}
-import io.github.oybek.evmsell.vk.{GetLongPollServerReq, VkApiImpl}
+import io.github.oybek.geekbear.vk.{GetLongPollServerReq, VkApiImpl}
 
 import scala.concurrent.duration.FiniteDuration
 import java.util.concurrent.TimeUnit

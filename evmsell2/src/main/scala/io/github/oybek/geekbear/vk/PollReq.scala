@@ -1,4 +1,4 @@
-package io.github.oybek.evmsell.vk
+package io.github.oybek.geekbear.vk
 
 import cats.syntax.functor._
 import io.circe.generic.auto._

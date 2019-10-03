@@ -1,12 +1,12 @@
-package io.github.oybek.evmsell
+package io.github.oybek.geekbear
 
 import cats.implicits._
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
-import io.github.oybek.evmsell.db.repository.{OfferRepository, UserRepository}
-import io.github.oybek.evmsell.model.Offer
-import io.github.oybek.evmsell.service.WallPostHandler
-import io.github.oybek.evmsell.vk._
+import io.github.oybek.geekbear.db.repository.{OfferRepository, UserRepository}
+import io.github.oybek.geekbear.model.Offer
+import io.github.oybek.geekbear.service.WallPostHandler
+import io.github.oybek.geekbear.vk._
 import org.http4s.client.Client
 import org.slf4j.LoggerFactory
 

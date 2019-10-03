@@ -1,7 +1,7 @@
 import cats.effect.Sync
 import cats.implicits._
 import com.typesafe.config.ConfigFactory
-import io.github.oybek.evmsell.vk.GetLongPollServerReq
+import io.github.oybek.geekbear.vk.GetLongPollServerReq
 import pureconfig.error.ConfigReaderException
 
 package object config {

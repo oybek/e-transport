@@ -1,8 +1,8 @@
-package io.github.oybek.evmsell.service
+package io.github.oybek.geekbear.service
 
 import config.Model
-import io.github.oybek.evmsell.model.Offer
-import io.github.oybek.evmsell.vk.WallPostNew
+import io.github.oybek.geekbear.model.Offer
+import io.github.oybek.geekbear.vk.WallPostNew
 
 case class WallPostHandler(model: Model) {
 

@@ -1,11 +1,11 @@
-package io.github.oybek.evmsell.db.repository
+package io.github.oybek.geekbear.db.repository
 
 import cats.Monad
 import doobie.implicits._
 import doobie.util.query.Query0
 import doobie.util.transactor.Transactor
 import doobie.util.update.Update0
-import io.github.oybek.evmsell.model.Offer
+import io.github.oybek.geekbear.model.Offer
 
 trait OfferRepositoryAlgebra[F[_]] {
   def insert(offer: Offer): F[Int]
