@@ -8,7 +8,7 @@ CREATE TABLE offer (
     price INTEGER,
     latitude FLOAT,
     longitude FLOAT,
-    sold BOOLEAN
+    sold INTEGER
 );
 
 CREATE TABLE user_info (

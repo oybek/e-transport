@@ -10,7 +10,7 @@ case class Offer(id: Long,
                  price: Option[Long],
                  latitude: Option[Float] = None,
                  longitude: Option[Float] = None,
-                 sold: Boolean = false) {
+                 sold: Option[Long] = None) {
   lazy val coord: Option[Coord] =
     for {
       lat <- latitude

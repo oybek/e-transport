@@ -70,7 +70,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         offs.filter(offer =>
           offer.price.exists(x => x >= from && x <= to) &&
           offer.coord.exists(_.distKmTo(userPos) < 50) &&
-          !offer.sold
+          offer.sold.isEmpty
         )
       }
       _ <- offers match {
@@ -143,6 +143,9 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
 
         case "мед" =>
           sendMessage(message.fromId, s"Где?!")
+
+        case "привет" =>
+          sendMessage(message.fromId, "Привет - Я Гик Медведь)")
 
         case _ =>
           sendMessage(message.fromId,
@@ -227,10 +230,10 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
       case "продан" => for {
         offerOpt <- offerRepository.selectById(wallReplyNew.postId)
         _ <- offerOpt.filter { offer =>
-          offer.fromId == wallReplyNew.fromId && !offer.sold
+          offer.fromId == wallReplyNew.fromId && offer.sold.isEmpty
         }.traverse { offer =>
           for {
-            _ <- offerRepository.sold(offer.id)
+            _ <- offerRepository.sold(offer.id, wallReplyNew.date)
             _ <- vkApi.wallComment(
               WallCommentReq(
                 ownerId = -getLongPollServerReq.groupId.toLong,

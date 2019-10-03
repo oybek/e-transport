@@ -9,16 +9,16 @@ import io.github.oybek.geekbear.model.Offer
 
 trait OfferRepositoryAlgebra[F[_]] {
   def insert(offer: Offer): F[Int]
-  def sold(id: Long): F[Int]
+  def sold(id: Long, date: Long): F[Int]
   def selectByTType(ttype: String): F[List[Offer]]
   def selectById(id: Long): F[Option[Offer]]
 }
 
 case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends OfferRepositoryAlgebra[F] {
 
-  override def sold(id: Long): F[Int] =
+  override def sold(id: Long, date: Long): F[Int] =
     sql"""
-    update offer set sold = true where id = $id
+    update offer set sold = $date where id = $id
     """.update.run.transact(transactor)
 
   override def selectById(id: Long): F[Option[Offer]] =
