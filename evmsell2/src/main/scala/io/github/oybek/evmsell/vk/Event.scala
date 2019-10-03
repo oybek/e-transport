@@ -16,7 +16,8 @@ case class MessageNew(id: Long,
                       text: String,
                       geo: Option[Geo]) extends Event
 
-case class Geo(coordinates: Coord)
+case class Geo(coordinates: Coord, place: Option[Place])
+case class Place(country: String, city: String, title: String)
 case class Coord(latitude: Float, longitude: Float)
 
 // --
@@ -38,13 +39,15 @@ object Event {
   implicit val decodeGeo: Decoder[Geo] =
     (c: HCursor) =>
       for {
-        coords <- c.downField("coordinates").as[Either[String, Coord]]
-        res = coords match {
+        coordEither <- c.downField("coordinates").as[Either[String, Coord]]
+        coord = coordEither match {
           case Left(s) =>
             val coords = s.split(' ')
-            Geo(Coord(coords(0).toFloat, coords(1).toFloat))
-          case Right(coord) => Geo(coord)
+            Coord(coords(0).toFloat, coords(1).toFloat)
+          case Right(coord) => coord
         }
+        place <- c.downField("place").as[Option[Place]]
+        res = Geo(coord, place)
       } yield res
 
   implicit val decodeEvent: Decoder[Event] =

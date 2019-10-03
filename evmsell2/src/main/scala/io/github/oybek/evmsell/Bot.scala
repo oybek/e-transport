@@ -3,7 +3,7 @@ package io.github.oybek.evmsell
 import cats.implicits._
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
-import io.github.oybek.evmsell.db.repository.OfferRepository
+import io.github.oybek.evmsell.db.repository.{OfferRepository, UserRepository}
 import io.github.oybek.evmsell.model.Offer
 import io.github.oybek.evmsell.service.WallPostHandler
 import io.github.oybek.evmsell.vk._
@@ -13,17 +13,45 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
                       userStates: Ref[F, Map[Long, List[Offer]]],
                       vkApi: VkApi[F],
                       offerRepository: OfferRepository[F],
+                      userRepository: UserRepository[F],
                       getLongPollServerReq: GetLongPollServerReq,
                       wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
-  lazy val sadSmile = "😞"
-
   override def onMessageNew(message: MessageNew): F[Unit] =
     for {
-      _ <- wallPostHandler.getTType(message.text.toLowerCase) match {
-        case Some(thing) => whenNewSearch(message)(thing)
-        case None => whenNotSearch(message)
+      _ <- message.geo.map { geo =>
+        for {
+          _ <- userRepository.upsert(message.fromId -> geo.coordinates)
+          _ <- sendMessage(message.fromId,
+            s"""
+              |Отлично! Я обновил твое местоположение 📍
+              |${geo.place.map(_.title).getOrElse("")}
+              |""".stripMargin)
+        } yield ()
+      }.getOrElse {
+        if (message.text.toLowerCase == "начать") {
+          sendMessage(message.fromId,
+            """
+              |Привет Пользователь!
+              |Я бот сообщества "Продам Комп"
+              |Я храню в базе все объявления стены
+              |и помогу тебе в поиске
+              |Напиши 'помощь' - я напишу что умею
+              |И отправь свою геопозицию - чтобы я
+              |знал твой город (это нужно для поиска)
+              |""".stripMargin)
+        } else {
+          wallPostHandler.getTType(message.text.toLowerCase) match {
+            case Some(thing) => for {
+              user <- userRepository.selectById(message.fromId)
+              _ <- user.map(_ => whenNewSearch(message)(thing)).getOrElse(
+                sendMessage(message.fromId, "Перед тем как начать поиск - надо отправить геолокацию")
+              )
+            } yield ()
+            case None => whenNotSearch(message)
+          }
+        }
       }
     } yield ()
 
@@ -89,7 +117,11 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
           sendMessage(message.fromId, s"Какой товар ищешь? (Моник, мышку, блок питания и т. д.)")
 
         case _ =>
-          sendMessage(message.fromId, s"Не очень понял что ты ищешь $sadSmile\nнапиши 'помощь' - я поскажу что я умею")
+          sendMessage(message.fromId,
+            s"""
+               |Не понял что ты ищешь 😞
+               |Напиши 'помощь' - я напишу что умею
+               |""".stripMargin)
       }
     } yield ()
 
