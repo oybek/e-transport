@@ -53,7 +53,10 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
                   """
                     |Перед тем как начать поиск - отправь геолокацию
                     |Чтобы я знал в каком городе искать объявления
-                    |""".stripMargin)
+                    |""".stripMargin,
+                  None,
+                  Keyboard(true, List(List(Button(Action("location"))))).some
+                )
               )
             } yield ()
             case None => whenNotSearch(message)
@@ -96,7 +99,11 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
                  |""".stripMargin,
             version = getLongPollServerReq.version,
             accessToken = getLongPollServerReq.accessToken,
-            attachment = Some(s"wall-${getLongPollServerReq.groupId}_${offersNonEmpty.head.id}")
+            attachment = s"wall-${getLongPollServerReq.groupId}_${offersNonEmpty.head.id}".some,
+            keyboard =
+              if (offers.length > 1)
+                Keyboard(true, List(List(Button(Action("text", "еще".some))))).some
+              else None
           ))
       }
       _ <- userStates.modify {
@@ -118,7 +125,10 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
             _ <- sendMessage(
               message.fromId,
               if (rest.length == 1) "" else s"Еще ${rest.length-1} в списке",
-              Some(s"wall-${getLongPollServerReq.groupId}_${rest.head.id}")
+              Some(s"wall-${getLongPollServerReq.groupId}_${rest.head.id}"),
+              if (rest.length > 1)
+                Keyboard(true, List(List(Button(Action("text", "еще".some))))).some
+              else None
             )
           } yield ()
 
@@ -152,17 +162,22 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
             s"""
                |Не понял что ты ищешь!
                |Напиши 'помощь' - я напишу что умею
-               |""".stripMargin)
+               |""".stripMargin,
+            None,
+            Keyboard(true, List(List(Button(Action("text", "помощь".some))))).some)
       }
     } yield ()
 
-  private def sendMessage(to: Long, text: String, attachment: Option[String] = None): F[Unit] = {
+  private def sendMessage(to: Long, text: String,
+                          attachment: Option[String] = None,
+                          keyboard: Option[Keyboard] = None): F[Unit] = {
     val sendMessageReq = SendMessageReq(
       userId = to,
       message = text,
       version = getLongPollServerReq.version,
       accessToken = getLongPollServerReq.accessToken,
-      attachment = attachment
+      attachment = attachment,
+      keyboard = keyboard
     )
     for {
       _ <- Sync[F].delay { log.info(s"Sending message: $sendMessageReq") }

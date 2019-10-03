@@ -56,7 +56,7 @@ case class WallReplyNew(id: Long,
 object Event {
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames
 
-  implicit val decodeMessageNew: Decoder[MessageNew] = deriveDecoder[MessageNew]
+  implicit val decodeMessageNew: Decoder[MessageNew] = deriveConfiguredDecoder[MessageNew]
 
   implicit val decodeGeo: Decoder[Geo] =
     (c: HCursor) =>
