@@ -19,15 +19,16 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
                       wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
+  private val adminIds = List(213461412)
+
   private val log = LoggerFactory.getLogger("bot")
 
   override def onMessageNew(message: MessageNew): F[Unit] =
     for {
-      _ <- Sync[F].delay {
-        log.info(s"Got message: $message")
-      }
+      _ <- Sync[F].delay { log.info(s"Got message: $message") }
       _ <- message.geo.map { geo =>
         for {
+          _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
           _ <- userRepository.upsert(message.fromId -> geo.coordinates)
           _ <- sendMessage(message.fromId,
             s"""
@@ -78,33 +79,26 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
       }
       _ <- offers match {
         case Nil =>
-          vkApi.sendMessage(SendMessageReq(
-            userId = message.fromId,
-            message = s"Не нашел объявлений по твоему запросу",
-            version = getLongPollServerReq.version,
-            accessToken = getLongPollServerReq.accessToken,
-          ))
+          sendMessage(message.fromId, s"Не нашел объявлений по твоему запросу")
         case offersNonEmpty =>
           def word(n: Int): String = n match {
             case 1 => "объявление"
             case 2|3|4 => "объявления"
             case _ => "объявлений"
           }
-          vkApi.sendMessage(SendMessageReq(
-            userId = message.fromId,
-            message =
-              s"""
-                 |Я нашел ${offers.length} ${word(offers.length)}
-                 |${if (offers.length > 1) "Вот первое. Напиши 'еще' я скину следующее" else "Вот оно:" }
-                 |""".stripMargin,
-            version = getLongPollServerReq.version,
-            accessToken = getLongPollServerReq.accessToken,
+          sendMessage(
+            message.fromId,
+            s"""
+               |Я нашел ${offers.length} ${word(offers.length)}
+               |${if (offers.length > 1) "Вот первое. Напиши 'еще' я скину следующее" else "Вот оно:" }
+               |""".stripMargin,
             attachment = s"wall-${getLongPollServerReq.groupId}_${offersNonEmpty.head.id}".some,
             keyboard =
               if (offers.length > 1)
                 Keyboard(true, List(List(Button(Action("text", "еще".some))))).some
-              else None
-          ))
+              else
+                None
+          )
       }
       _ <- userStates.modify {
         states => (states + (message.fromId -> offers), states)
@@ -189,19 +183,18 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
     wallPostNew.postType match {
       case Some("suggest") =>
         for {
-          _ <- Sync[F].delay { log.info(s"Got new wallpost: $wallPostNew") }
-          _ <- vkApi.sendMessage(SendMessageReq(
-            userId = 213461412,
-            message = "Новая запись на модерацию",
-            version = getLongPollServerReq.version,
-            accessToken = getLongPollServerReq.accessToken,
-            attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
-          ))
+          _ <- Sync[F].delay { log.info(s"Got new wallpost suggestion: $wallPostNew") }
+          _ <- adminIds.traverse(id =>
+            sendMessage(
+              id,
+              "Новая запись на модерацию",
+              Some(s"wall-${getLongPollServerReq.groupId}_${wallPostNew.id}")
+          )).void
         } yield ()
 
       case Some("post") =>
         for {
-          _ <- Sync[F].delay { println(wallPostNew.toString) }
+          _ <- Sync[F].delay { log.info(s"Posting new wallpost: ${wallPostNew.toString}") }
 
           userInfo = for {
             userId <- wallPostNew.signerId
@@ -218,21 +211,17 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
             )
           _ <- offerRepository.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
-            vkApi.sendMessage(SendMessageReq(
-              userId = signerId,
-              message = "Твое предложение опубликовано",
-              version = getLongPollServerReq.version,
-              accessToken = getLongPollServerReq.accessToken,
-              attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
-            ))
+            sendMessage(
+              signerId,
+              "Твое предложение опубликовано",
+              Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")).void
           } getOrElse {
-            vkApi.sendMessage(SendMessageReq(
-              userId = 213461412,
-              message = "Ты опубликовал предложение без подписи! Поправь",
-              version = getLongPollServerReq.version,
-              accessToken = getLongPollServerReq.accessToken,
-              attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
-            ))
+            adminIds.traverse(id =>
+              sendMessage(
+                id,
+                "Ты опубликовал предложение без подписи! Поправь и обнови в базе",
+                attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
+            )).void
           }
         } yield ()
 
