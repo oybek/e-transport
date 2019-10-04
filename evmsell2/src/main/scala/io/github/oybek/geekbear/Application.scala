@@ -4,7 +4,7 @@ import cats.implicits._
 import cats.effect.concurrent.Ref
 import config.Config
 import io.github.oybek.geekbear.db.DB
-import io.github.oybek.geekbear.db.repository.{OfferRepository, UserRepository}
+import io.github.oybek.geekbear.db.repository.{OfferRepository, StatsRepository, UserRepository}
 import io.github.oybek.geekbear.model.Offer
 import io.github.oybek.geekbear.service.WallPostHandler
 import monix.eval.Task
@@ -27,6 +27,7 @@ object Application extends App {
       wallPostHandler = WallPostHandler(config.model)
       offerRepository = OfferRepository(transactor)
       userRepository = UserRepository(transactor)
+      statsRepository = StatsRepository(transactor)
       _ <- DB.initialize(transactor)
       _ <- BlazeClientBuilder[Task](global)
         .withResponseHeaderTimeout(FiniteDuration(60, TimeUnit.SECONDS))
@@ -36,7 +37,7 @@ object Application extends App {
             client,
             userStates,
             new VkApiImpl[Task](client),
-            offerRepository, userRepository,
+            offerRepository, userRepository, statsRepository,
             config.getLongPollServerReq,
             wallPostHandler
           ).start

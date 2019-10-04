@@ -3,7 +3,7 @@ package io.github.oybek.geekbear
 import cats.implicits._
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
-import io.github.oybek.geekbear.db.repository.{OfferRepository, UserRepository}
+import io.github.oybek.geekbear.db.repository.{OfferRepository, OfferRepositoryAlgebra, StatsRepositoryAlgebra, UserRepository, UserRepositoryAlgebra}
 import io.github.oybek.geekbear.model.Offer
 import io.github.oybek.geekbear.service.WallPostHandler
 import io.github.oybek.geekbear.vk._
@@ -11,12 +11,13 @@ import org.http4s.client.Client
 import org.slf4j.LoggerFactory
 
 case class Bot[F[_]: Sync](httpClient: Client[F],
-                      userStates: Ref[F, Map[Long, List[Offer]]],
-                      vkApi: VkApi[F],
-                      offerRepository: OfferRepository[F],
-                      userRepository: UserRepository[F],
-                      getLongPollServerReq: GetLongPollServerReq,
-                      wallPostHandler: WallPostHandler)
+                           userStates: Ref[F, Map[Long, List[Offer]]],
+                           vkApi: VkApi[F],
+                           offerRepository: OfferRepositoryAlgebra[F],
+                           userRepository: UserRepositoryAlgebra[F],
+                           statsRepository: StatsRepositoryAlgebra[F],
+                           getLongPollServerReq: GetLongPollServerReq,
+                           wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
   private val adminIds = List(213461412)
@@ -150,6 +151,12 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
 
         case "привет" =>
           sendMessage(message.fromId, "Привет - Я Гик Медведь)")
+
+        case "статистика" =>
+          for {
+            stats <- statsRepository.stats
+            _ <- sendMessage(message.fromId, s"Всего предложений ${stats._1}\nЗа последние 24 часа ${stats._2}")
+          } yield ()
 
         case _ =>
           sendMessage(message.fromId,
