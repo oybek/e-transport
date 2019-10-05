@@ -33,7 +33,12 @@ case class WallPostHandler(model: Model) {
   }
 
   def getTType(text: String): Option[String] =
-    namesToTypes.map {
-      case (name, ttype) => (text indexOf name, ttype)
-    }.minBy(_._1).att.map(_._2)
+    namesToTypes
+      .map { case (name, ttype) => (text indexOf name, ttype) }
+      .filter { case (i, _) => i != -1 }
+      .foldLeft(Option.empty[(Int, String)]) {
+        case (None, (i, v)) => Some(i -> v)
+        case (Some(x), y) => Some(Seq(x, y).minBy(_._1))
+      }
+      .map(_._2)
 }

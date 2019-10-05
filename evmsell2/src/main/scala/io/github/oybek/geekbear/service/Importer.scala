@@ -19,18 +19,34 @@ case class Importer[F[_]: Sync](offerRepositoryAlgebra: OfferRepositoryAlgebra[F
   val ekb = Coord(56.8519f, 60.6122f)
 
   def importAll(): F[Unit] = {
-    Resource.fromAutoCloseable(
-      Sync[F].delay { Source.fromFile("/Users/hashimov/Garage/vk-hack/wall2.json") }
-    ).use(source =>
-      for {
-        rawJson <- Sync[F].delay { source.getLines.mkString }
-        posts = decode[Data](rawJson)
-        _ <- Sync[F].delay { println(posts) }
-        _ <- posts.right.get.response.items.traverse { wallPost =>
-          val offer = wallPostHandler.wallPostToOffer(wallPost)
-          offerRepositoryAlgebra.insert(offer.copy(latitude = Some(ekb.latitude), longitude = Some(ekb.longitude)))
-        }.void
-      } yield ()
-    )
+    List(
+      "/home/oybek/garage/vk/wall1.json",
+      "/home/oybek/garage/vk/wall2.json",
+      "/home/oybek/garage/vk/wall3.json",
+      "/home/oybek/garage/vk/wall4.json",
+      "/home/oybek/garage/vk/wall5.json",
+      "/home/oybek/garage/vk/wall6.json",
+      "/home/oybek/garage/vk/wall7.json",
+      "/home/oybek/garage/vk/wall8.json",
+    ).traverse(fname =>
+      Resource.fromAutoCloseable(
+        Sync[F].delay { Source.fromFile(fname) }
+      ).use(source =>
+        for {
+          rawJson <- Sync[F].delay { source.getLines.mkString }
+          posts = decode[Data](rawJson)
+          _ <- Sync[F].delay { println(posts) }
+          _ <- posts.right.get.response.items.traverse { wallPost =>
+            val offer = wallPostHandler.wallPostToOffer(wallPost)
+            for {
+              dbOffer <- offerRepositoryAlgebra.selectById(offer.id)
+              _ <- offerRepositoryAlgebra
+                .insert(offer.copy(latitude = Some(ekb.latitude), longitude = Some(ekb.longitude)))
+                .whenA(dbOffer.isEmpty)
+            } yield ()
+          }.void
+        } yield ()
+      )
+    ).void
   }
 }
