@@ -20,14 +20,7 @@ case class Importer[F[_]: Sync](offerRepositoryAlgebra: OfferRepositoryAlgebra[F
 
   def importAll(): F[Unit] = {
     List(
-      "/home/oybek/garage/vk/wall1.json",
-      "/home/oybek/garage/vk/wall2.json",
-      "/home/oybek/garage/vk/wall3.json",
-      "/home/oybek/garage/vk/wall4.json",
-      "/home/oybek/garage/vk/wall5.json",
-      "/home/oybek/garage/vk/wall6.json",
-      "/home/oybek/garage/vk/wall7.json",
-      "/home/oybek/garage/vk/wall8.json",
+      "/home/oybek/garage/vk/lastwall.json",
     ).traverse(fname =>
       Resource.fromAutoCloseable(
         Sync[F].delay { Source.fromFile(fname) }
