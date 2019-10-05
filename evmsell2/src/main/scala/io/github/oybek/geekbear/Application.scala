@@ -6,7 +6,7 @@ import config.Config
 import io.github.oybek.geekbear.db.DB
 import io.github.oybek.geekbear.db.repository.{OfferRepository, StatsRepository, UserRepository}
 import io.github.oybek.geekbear.model.Offer
-import io.github.oybek.geekbear.service.WallPostHandler
+import io.github.oybek.geekbear.service.{Importer, WallPostHandler}
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import org.http4s.client.blaze.{BlazeClientBuilder, BlazeClientConfig}
@@ -28,6 +28,8 @@ object Application extends App {
       offerRepository = OfferRepository(transactor)
       userRepository = UserRepository(transactor)
       statsRepository = StatsRepository(transactor)
+      importer = Importer(offerRepository, wallPostHandler)
+      _ <- importer.importAll()
       _ <- DB.initialize(transactor)
       _ <- BlazeClientBuilder[Task](global)
         .withResponseHeaderTimeout(FiniteDuration(60, TimeUnit.SECONDS))
@@ -42,6 +44,7 @@ object Application extends App {
             wallPostHandler
           ).start
         }
+        .whenA(false)
     } yield ()
 
   root.runSyncUnsafe()
