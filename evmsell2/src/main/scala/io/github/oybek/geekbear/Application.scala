@@ -29,7 +29,6 @@ object Application extends App {
       userRepository = UserRepository(transactor)
       statsRepository = StatsRepository(transactor)
       importer = Importer(offerRepository, wallPostHandler)
-      _ <- importer.importAll()
       _ <- DB.initialize(transactor)
       _ <- BlazeClientBuilder[Task](global)
         .withResponseHeaderTimeout(FiniteDuration(60, TimeUnit.SECONDS))
@@ -44,7 +43,6 @@ object Application extends App {
             wallPostHandler
           ).start
         }
-        .whenA(false)
     } yield ()
 
   root.runSyncUnsafe()
