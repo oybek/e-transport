@@ -1,6 +1,7 @@
 
 CREATE TABLE offer (
     id INTEGER PRIMARY KEY,
+    group_id INTEGER,
     from_id INTEGER,
     date INTEGER,
     ttype TEXT,

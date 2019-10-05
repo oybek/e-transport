@@ -33,6 +33,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
   private def selectByTTypeSql(ttype: String): Query0[Offer] = sql"""
     select
       id,
+      group_id,
       from_id,
       date,
       ttype,
@@ -47,6 +48,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
   private def selectByIdSql(id: Long): Query0[Offer] = sql"""
     select
       id,
+      group_id,
       from_id,
       date,
       ttype,
@@ -61,6 +63,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
   private def insertSql(offer: Offer): Update0 = sql"""
     insert into offer (
       id,
+      group_id,
       from_id,
       date,
       ttype,
@@ -71,6 +74,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
       sold
     ) values (
       ${offer.id},
+      ${offer.groupId},
       ${offer.fromId},
       ${offer.date},
       ${offer.ttype},

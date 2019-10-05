@@ -93,7 +93,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
                |Я нашел ${offers.length} ${word(offers.length)}
                |${if (offers.length > 1) "Вот первое. Напиши 'еще' я скину следующее" else "Вот оно:" }
                |""".stripMargin,
-            attachment = s"wall-${getLongPollServerReq.groupId}_${offersNonEmpty.head.id}".some,
+            attachment = s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
             keyboard =
               if (offers.length > 1)
                 Keyboard(true, List(List(Button(Action("text", "еще".some))))).some
@@ -120,7 +120,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
             _ <- sendMessage(
               message.fromId,
               if (rest.length == 1) "" else s"Еще ${rest.length-1} в списке",
-              Some(s"wall-${getLongPollServerReq.groupId}_${rest.head.id}"),
+              Some(s"wall${rest.head.groupId}_${rest.head.id}"),
               if (rest.length > 1)
                 Keyboard(true, List(List(Button(Action("text", "еще".some))))).some
               else None

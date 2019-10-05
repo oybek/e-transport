@@ -14,6 +14,7 @@ case class WallPostHandler(model: Model) {
     val text = wallPost.text.toLowerCase
     Offer(
       id = wallPost.id,
+      groupId = wallPost.ownerId,
       fromId = wallPost.signerId.getOrElse(0),
       date = wallPost.date,
       text = wallPost.text,
@@ -24,11 +25,20 @@ case class WallPostHandler(model: Model) {
     )
   }
 
-  private def getPrice(text: String): Option[Long] =
-    "[0-9]+".r.findFirstIn(text).map(_.toLong)
+  private def getPrice(text: String): Option[Long] = {
+    "[0-9][0-9. ]+[ ]*(руб|р.)?".r.findFirstIn(text)
+      .orElse("цен[^0-9]*[0-9][0-9. ]+".r.findFirstIn(text))
+      .orElse("[0-9][0-9. ]+".r.findFirstIn(text))
+      .map(_.filter(_.isDigit).toLong)
+  }
 
   def getTType(text: String): Option[String] =
-    namesToTypes.find {
-      case (name, _) => text.contains(name)
-    }.map(_._2)
+    namesToTypes
+      .map { case (name, ttype) => (text indexOf name, ttype) }
+      .filter { case (i, _) => i != -1 }
+      .foldLeft(Option.empty[(Int, String)]) {
+        case (None, (i, v)) => Some(i -> v)
+        case (Some(x), y) => Some(Seq(x, y).minBy(_._1))
+      }
+      .map(_._2)
 }
