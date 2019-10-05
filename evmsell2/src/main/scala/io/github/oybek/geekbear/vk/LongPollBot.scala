@@ -14,7 +14,9 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
 
   final def poll(pollReq: PollReq): F[Unit] =
     for {
-      pollRes <- vkApi.poll(pollReq)
+      pollRes <- vkApi.poll(pollReq).onError {
+        case _: java.io.IOException => poll(pollReq)
+      }
       _ <- pollRes match {
         case PollWithUpdates(ts, updates) =>
           for {
