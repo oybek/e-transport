@@ -74,7 +74,7 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
         val to = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(1000000L)
         offs.filter(offer =>
           offer.price.exists(x => x >= from && x <= to) &&
-          offer.coord.exists(_.distKmTo(userPos) < 50) &&
+          /* TODO: Uncomment, when expaned to several citites offer.coord.exists(_.distKmTo(userPos) < 50) && */
           offer.sold.isEmpty
         )
       }
