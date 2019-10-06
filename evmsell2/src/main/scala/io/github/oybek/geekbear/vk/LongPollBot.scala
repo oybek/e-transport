@@ -14,17 +14,16 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
 
   final def poll(pollReq: PollReq): F[Unit] =
     for {
-      pollRes <- vkApi.poll(pollReq).onError {
-        case _: java.io.IOException => start
-      }
+      pollRes <- vkApi.poll(pollReq).attempt
       _ <- pollRes match {
-        case PollWithUpdates(ts, updates) =>
+        case Right(PollWithUpdates(ts, updates)) =>
           for {
             _ <- updates.traverse(onEvent)
             _ <- poll(pollReq.copy(ts = ts))
           } yield ()
 
-        case PollFailed(_, _) => start
+        case Right(PollFailed(_, _))
+             | Left(_: java.io.IOException) => start
       }
     } yield ()
 
