@@ -12,7 +12,7 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>log-${byDay}.txt </file>
+        <file>logs/log-${byDay}.txt </file>
         <append>true</append>
         <encoder>
             <pattern>[%d{ISO8601}] | %-5le | %-50lo{50} | [%.10thread] | %msg%n</pattern>
