@@ -3,10 +3,13 @@ package io.github.oybek.geekbear.vk
 import cats.implicits._
 import cats.effect.Sync
 import org.http4s.client.Client
+import org.slf4j.LoggerFactory
 
 abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
                                        vkApi: VkApi[F],
                                        getLongPollServerReq: GetLongPollServerReq) {
+
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   // TODO: can we use val here?
   final private def getLongPollServer: F[GetLongPollServerRes] =
@@ -15,6 +18,7 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
   final def poll(pollReq: PollReq): F[Unit] =
     for {
       pollRes <- vkApi.poll(pollReq).attempt
+      _ <- Sync[F].delay { log.debug(s"$pollRes") }
       _ <- pollRes match {
         case Right(PollWithUpdates(ts, updates)) =>
           for {
