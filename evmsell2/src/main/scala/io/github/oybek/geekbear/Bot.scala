@@ -23,6 +23,8 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                                               wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
+  private val cityToGeo = Map("Екатеринбург" -> Coord(56.8519f, 60.6122f))
+
   private val adminIds = List(213461412L)
 
   private val log = LoggerFactory.getLogger("bot")
@@ -58,31 +60,18 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             """
               |Привет - Я Гик Медведь 🐻!
               |В своей группе ВК я помогаю людям продать или купить компьютерную технику
-              |Я запомнил все объявления на стене и быстро найду нужное тебе
               |Напиши 'помощь' и я подскажу что умею
               |""".stripMargin)
         } else {
           wallPostHandler.getTType(message.text.toLowerCase) match {
-            case Some(thing) => for {
-              user <- userRepository.selectById(message.fromId)
-              _ <- user.map(usr => whenNewSearch(message)(thing, usr._2)).getOrElse(
-                sendMessage(message.fromId,
-                  """
-                    |Перед тем как начать поиск - отправь геолокацию
-                    |Чтобы я знал в каком городе искать объявления
-                    |""".stripMargin,
-                  None,
-                  Keyboard(true, List(List(Button(Action("location"))))).some
-                )
-              )
-            } yield ()
+            case Some(thing) => whenNewSearch(message)(thing)
             case None => whenNotSearch(message)
           }
         }
       }
     } yield ()
 
-  def whenNewSearch(message: MessageNew)(thing: String, userPos: Coord): F[Unit] =
+  def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
     for {
       offers <- offerRepository.selectByTType(thing).map { offs =>
         val from = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
@@ -113,7 +102,9 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             attachment = s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
             keyboard =
               if (offers.length > 1)
-                Keyboard(true, List(List(Button(Action("text", "еще".some))))).some
+                Keyboard(true, List(List(
+                  Button(Action("text", "еще".some))
+                ))).some
               else
                 None
           )
@@ -148,26 +139,24 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
           sendMessage(message.fromId,
             s"""
                |Я нахожу объявления по названию товара, например:
-               |Ноут, Системник или Видяха и т. д.
+               |Ноут, Системник или Видяха и т. д. В этом всем
+               |я шарю - и знаю кто че продает.
                |
-               |Еще я умею фильтровать объявления по цене
-               |Ты можешь написать:
+               |Еще если бабла маловато пиши:
                |Ноут от 5000 до 10000
                |Или просто:
                |Системник до 20000
-               |
-               |Объявления я ищу в твоем городе
                |""".stripMargin
           )
 
         case "еще" =>
-          sendMessage(message.fromId, s"Какой товар ищешь? (Моник, мышку, блок питания и т. д.)")
+          sendMessage(message.fromId, s"Чет тебя не понял, ты что вообще хочешь? (Моник, мышку, блок питания и т. д.)")
 
         case "мед" =>
           sendMessage(message.fromId, s"Где?!")
 
         case "привет" =>
-          sendMessage(message.fromId, "Привет - Я Гик Медведь)")
+          sendMessage(message.fromId, "Даров - Я Гик Медведь)")
 
         case "статистика" =>
           for {
@@ -178,7 +167,8 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
         case _ =>
           sendMessage(message.fromId,
             s"""
-               |Не понял что ты ищешь!
+               |Я - Медведь - много чего человеческого не понимаю.
+               |Напиши просто что ты ищешь (Системник, Видяху, Ноут и т. д.)!
                |Напиши 'помощь' - я напишу что умею
                |""".stripMargin,
             None,
