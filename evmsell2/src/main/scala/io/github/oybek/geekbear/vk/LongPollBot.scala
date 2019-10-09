@@ -27,7 +27,8 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
           } yield ()
 
         case Right(PollFailed(_, _))
-             | Left(_: java.io.IOException) => start
+             | Left(_: java.io.IOException)
+             | Left(_: java.util.concurrent.TimeoutException) => start
       }
     } yield ()
 
