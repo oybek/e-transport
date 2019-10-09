@@ -1,33 +1,47 @@
 package io.github.oybek.geekbear
 
 import cats.implicits._
-import cats.effect.Sync
+import cats.effect.{Async, Concurrent, Sync, Timer}
+import cats.effect.syntax.all._
 import cats.effect.concurrent.Ref
 import io.github.oybek.geekbear.db.repository.{OfferRepository, OfferRepositoryAlgebra, StatsRepositoryAlgebra, UserRepository, UserRepositoryAlgebra}
 import io.github.oybek.geekbear.model.Offer
-import io.github.oybek.geekbear.service.WallPostHandler
+import io.github.oybek.geekbear.service.{Jaw, WallPostHandler}
 import io.github.oybek.geekbear.vk._
 import io.github.oybek.geekbear.vk.api.{Action, Button, GetLongPollServerReq, Keyboard, SendMessageReq, VkApi, WallCommentReq}
 import org.http4s.client.Client
 import org.slf4j.LoggerFactory
 
-case class Bot[F[_]: Sync](httpClient: Client[F],
-                           userStates: Ref[F, Map[Long, List[Offer]]],
-                           vkApi: VkApi[F],
-                           offerRepository: OfferRepositoryAlgebra[F],
-                           userRepository: UserRepositoryAlgebra[F],
-                           statsRepository: StatsRepositoryAlgebra[F],
-                           getLongPollServerReq: GetLongPollServerReq,
-                           wallPostHandler: WallPostHandler)
+case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
+                                              userStates: Ref[F, Map[Long, List[Offer]]],
+                                              vkApi: VkApi[F],
+                                              offerRepository: OfferRepositoryAlgebra[F],
+                                              userRepository: UserRepositoryAlgebra[F],
+                                              statsRepository: StatsRepositoryAlgebra[F],
+                                              getLongPollServerReq: GetLongPollServerReq,
+                                              jaw: Jaw[F],
+                                              wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
-  private val adminIds = List(213461412)
+  private val adminIds = List(213461412L)
 
   private val log = LoggerFactory.getLogger("bot")
 
   override def onMessageNew(message: MessageNew): F[Unit] =
     for {
       _ <- Sync[F].delay { log.info(s"Got message: $message") }
+
+      _ <- "жри -?[0-9]+".r
+        .findFirstIn(message.text.toLowerCase)
+        .traverse { q =>
+          val groupId = q.split(' ')(1).toLong
+          for {
+            _ <- sendMessage(message.fromId, "Начинаю пожирать данную группу...")
+            res <- jaw.breakfast(List(groupId), adminIds)
+            _ <- sendMessage(message.fromId, s"Сожрал ${res.length} постов\nПереварил ${res.count(_.isRight)}")
+          } yield ()
+        }.whenA(adminIds.contains(message.fromId)).start.void
+
       _ <- message.geo.map { geo =>
         for {
           _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
@@ -77,7 +91,9 @@ case class Bot[F[_]: Sync](httpClient: Client[F],
           offer.price.exists(x => x >= from && x <= to) &&
           /* TODO: Uncomment, when expaned to several citites offer.coord.exists(_.distKmTo(userPos) < 50) && */
           offer.sold.isEmpty
-        )
+        ).sortWith {
+          case (off1, off2) => off1.date > off2.date
+        }
       }
       _ <- offers match {
         case Nil =>

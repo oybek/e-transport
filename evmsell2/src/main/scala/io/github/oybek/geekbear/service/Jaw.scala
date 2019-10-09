@@ -1,29 +1,39 @@
 package io.github.oybek.geekbear.service
 
-import cats.implicits._
+import cats.instances.list._
+import cats.syntax.all._
 import cats.effect._
 import io.github.oybek.geekbear.db.repository.OfferRepositoryAlgebra
 import io.github.oybek.geekbear.vk.Coord
 import io.github.oybek.geekbear.vk.api.{VkApi, WallGetReq}
 
-case class Jaw[F[_]: Sync](offerRepositoryAlgebra: OfferRepositoryAlgebra[F],
-                           wallPostHandler: WallPostHandler,
-                           vkApi: VkApi[F],
-                           serviceKey: String) {
+import scala.concurrent.duration._
+
+case class Jaw[F[_]: Sync: Timer](offerRepositoryAlgebra: OfferRepositoryAlgebra[F],
+                                  wallPostHandler: WallPostHandler,
+                                  vkApi: VkApi[F],
+                                  serviceKey: String) {
 
   val ekb = Coord(56.8519f, 60.6122f)
 
-  def breakfast: F[Unit] =
-    for {
-      wallGetRes <- vkApi.wallGet(
-        WallGetReq(
-          ownerId = -134326485,
-          offset = 0,
-          count = 1,
-          version = "5.101",
-          accessToken = serviceKey))
-      _ <- wallGetRes.response.items.traverse { wallPost =>
-        Sync[F].delay { println(s"$wallPost") }
+  def breakfast(groupIds: List[Long], adminIds: List[Long]): F[List[Either[Throwable, Int]]] =
+    groupIds.flatTraverse ( groupId =>
+      (0 to 500 by 100).toList.flatTraverse { offset =>
+        for {
+          wallGetRes <- vkApi.wallGet(
+            WallGetReq(
+              ownerId = groupId,
+              offset = 0,
+              count = offset,
+              version = "5.101",
+              accessToken = serviceKey))
+          result <- wallGetRes.response.items.traverse { wallPost =>
+            val offer = wallPostHandler.wallPostToOffer(wallPost)
+              .copy(latitude = ekb.latitude.some, longitude = ekb.longitude.some)
+            offerRepositoryAlgebra.insert(offer).attempt
+          }
+          _ <- Timer[F].sleep(1 second)
+        } yield result
       }
-    } yield ()
+    )
 }

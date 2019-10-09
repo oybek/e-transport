@@ -43,6 +43,7 @@ object Application extends App {
               vkApi,
               offerRepository, userRepository, statsRepository,
               config.getLongPollServerReq,
+              jaw,
               wallPostHandler
             ).start
           } yield ()
