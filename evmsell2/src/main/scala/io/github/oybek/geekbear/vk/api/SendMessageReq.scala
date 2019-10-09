@@ -1,12 +1,11 @@
-package io.github.oybek.geekbear.vk
+package io.github.oybek.geekbear.vk.api
 
 import java.net.URLEncoder
 
-import io.circe._
-import io.circe.syntax._
+import io.circe.Encoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import io.circe.{Decoder, Encoder}
+import io.circe.syntax._
 import io.github.oybek.geekbear.vk.Util._
 
 case class SendMessageReq(userId: Long,
@@ -14,7 +13,7 @@ case class SendMessageReq(userId: Long,
                           version: String,
                           accessToken: String,
                           attachment: Option[String] = None,
-                          keyboard: Option[Keyboard] = None) {
+                          keyboard: Option[Keyboard] = None) extends Req {
   def toRequestStr: String = {
     Seq(
       "user_id" -> userId,

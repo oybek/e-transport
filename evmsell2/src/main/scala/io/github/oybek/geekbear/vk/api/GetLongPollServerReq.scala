@@ -1,4 +1,4 @@
-package io.github.oybek.geekbear.vk
+package io.github.oybek.geekbear.vk.api
 
 case class GetLongPollServerReq(groupId: String, accessToken: String, version: String) {
   def toRequestStr: String = {

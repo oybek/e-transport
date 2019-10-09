@@ -1,7 +1,7 @@
 import cats.effect.Sync
 import cats.implicits._
 import com.typesafe.config.ConfigFactory
-import io.github.oybek.geekbear.vk.GetLongPollServerReq
+import io.github.oybek.geekbear.vk.api.GetLongPollServerReq
 import pureconfig.error.ConfigReaderException
 
 package object config {
@@ -12,7 +12,7 @@ package object config {
 
   case class DatabaseConfig(driver: String, url: String, user: String, password: String)
 
-  case class Config(getLongPollServerReq: GetLongPollServerReq, database: DatabaseConfig, model: Model)
+  case class Config(getLongPollServerReq: GetLongPollServerReq, database: DatabaseConfig, model: Model, serviceKey: String)
 
   object Config {
     import pureconfig._

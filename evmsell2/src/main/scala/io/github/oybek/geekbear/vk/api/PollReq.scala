@@ -1,8 +1,9 @@
-package io.github.oybek.geekbear.vk
+package io.github.oybek.geekbear.vk.api
 
 import cats.syntax.functor._
-import io.circe.generic.auto._
 import io.circe.Decoder
+import io.circe.generic.auto._
+import io.github.oybek.geekbear.vk.Event
 
 case class PollReq(server: String,
                    act: String = "a_check",

@@ -1,4 +1,4 @@
-package io.github.oybek.geekbear.vk
+package io.github.oybek.geekbear.vk.api
 
 import java.net.URLEncoder
 

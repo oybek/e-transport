@@ -7,6 +7,7 @@ import io.github.oybek.geekbear.db.repository.{OfferRepository, OfferRepositoryA
 import io.github.oybek.geekbear.model.Offer
 import io.github.oybek.geekbear.service.WallPostHandler
 import io.github.oybek.geekbear.vk._
+import io.github.oybek.geekbear.vk.api.{Action, Button, GetLongPollServerReq, Keyboard, SendMessageReq, VkApi, WallCommentReq}
 import org.http4s.client.Client
 import org.slf4j.LoggerFactory
 

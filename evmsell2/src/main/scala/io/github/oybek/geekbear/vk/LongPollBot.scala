@@ -2,6 +2,7 @@ package io.github.oybek.geekbear.vk
 
 import cats.implicits._
 import cats.effect.Sync
+import io.github.oybek.geekbear.vk.api.{GetLongPollServerReq, GetLongPollServerRes, PollFailed, PollReq, PollWithUpdates, VkApi}
 import org.http4s.client.Client
 import org.slf4j.LoggerFactory
 
