@@ -45,8 +45,11 @@ abstract class LongPollBot[F[_]: Sync](httpClient: Client[F],
       _ <- poll(pollReq)
     } yield ()
 
+  private def preHandleText(text: String): String =
+    text.take(40).toLowerCase.replaceAll("\\[.*\\]", "").trim
+
   final def onEvent(event: Event): F[Unit] = event match {
-    case messageNew: MessageNew => onMessageNew(messageNew.copy(text = messageNew.text.take(40).toLowerCase))
+    case messageNew: MessageNew => onMessageNew(messageNew.copy(text = preHandleText(messageNew.text)))
     case wallPostNew: WallPostNew => onWallPostNew(wallPostNew)
     case wallReplyNew: WallReplyNew => onWallReplyNew(wallReplyNew)
   }

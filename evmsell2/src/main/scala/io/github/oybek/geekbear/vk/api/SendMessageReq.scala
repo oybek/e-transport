@@ -8,7 +8,7 @@ import io.circe.generic.extras.semiauto._
 import io.circe.syntax._
 import io.github.oybek.geekbear.vk.Util._
 
-case class SendMessageReq(userId: Long,
+case class SendMessageReq(peerId: Long,
                           message: String,
                           version: String,
                           accessToken: String,
@@ -16,7 +16,7 @@ case class SendMessageReq(userId: Long,
                           keyboard: Option[Keyboard] = None) extends Req {
   def toRequestStr: String = {
     Seq(
-      "user_id" -> userId,
+      "peer_id" -> peerId,
       "access_token" -> accessToken,
       "v" -> version,
       "message" -> URLEncoder.encode(message, "UTF-8"),

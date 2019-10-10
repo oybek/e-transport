@@ -12,6 +12,7 @@ sealed trait Event
 // --
 case class MessageNew(id: Long,
                       date: Long,
+                      peerId: Long,
                       fromId: Long,
                       text: String,
                       geo: Option[Geo]) extends Event
