@@ -25,12 +25,15 @@ case class WallPostHandler(model: Model) {
     )
   }
 
-  private def getPrice(text: String): Option[Long] = {
-    "[0-9][0-9. ]+[ ]*(руб|р.)?".r.findFirstIn(text)
+  def getPrice(text: String): Option[Long] =
+    "[0-9][0-9. ]+[ ]?(руб|р.)".r.findFirstIn(text)
       .orElse("цен[^0-9]*[0-9][0-9. ]+".r.findFirstIn(text))
-      .orElse("[0-9][0-9. ]+".r.findFirstIn(text))
-      .map(_.filter(_.isDigit).toLong)
-  }
+      .orElse("[0-9][0-9. ]*(k|к)".r.findAllIn(text).toList.lastOption)
+      .orElse("[0-9][0-9. ]*".r.findAllIn(text).toList.lastOption)
+      .map(_
+        .replaceFirst("(k|к)", "000")
+        .filter(_.isDigit).toLong
+      )
 
   def getTType(text: String): Option[String] =
     namesToTypes
