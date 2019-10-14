@@ -29,7 +29,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
 
   private val log = LoggerFactory.getLogger("bot")
 
-  private val helpButton = Keyboard(false, List(List(Button(Action("text", "помощь".some))))).some
+  private val helpButton = Button(Action("text", "помощь".some), Some("positive"))
 
   override def onMessageNew(message: MessageNew): F[Unit] =
     for {
@@ -54,16 +54,15 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             s"""
               |Отлично! Я обновил твое местоположение 📍
               |${geo.place.map(_.title).getOrElse("")}
-              |""".stripMargin, None, helpButton)
+              |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
         } yield ()
       }.getOrElse {
         if (message.text.toLowerCase == "начать") {
           sendMessage(message.peerId,
             """
               |Привет - Я Гик Медведь 🐻!
-              |В своей группе ВК я помогаю людям продать или купить компьютерную технику
               |Напиши 'помощь' и я подскажу что умею
-              |""".stripMargin, None, helpButton)
+              |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
         } else {
           wallPostHandler.getTType(message.text.toLowerCase) match {
             case Some(thing) => whenNewSearch(message)(thing)
@@ -88,7 +87,9 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       }
       _ <- offers match {
         case Nil =>
-          sendMessage(message.peerId, s"Не нашел объявлений по твоему запросу", None, helpButton)
+          sendMessage(message.peerId,
+            s"Нет объявлений по твоему запросу",
+            None, Keyboard(false, List(List(helpButton))).some)
         case offersNonEmpty =>
           def word(n: Int): String = n match {
             case 1 => "объявление"
@@ -105,11 +106,10 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             keyboard =
               if (offers.length > 1)
                 Keyboard(false, List(List(
-                  Button(Action("text", "еще".some)),
-                  Button(Action("text", "помощь".some))
+                  Button(Action("text", s"еще [${offers.length-1}]".some)),
                 ))).some
               else
-                None
+                Keyboard(false, List(List(helpButton))).some
           )
       }
       _ <- userStates.modify {
@@ -133,7 +133,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
               if (rest.length == 1) "" else s"Еще ${rest.length-1} в списке",
               Some(s"wall${rest.head.groupId}_${rest.head.id}"),
               if (rest.length > 1)
-                Keyboard(false, List(List(Button(Action("text", "еще".some))))).some
+                Keyboard(false, List(List(Button(Action("text", s"еще [${rest.length-1}]".some))))).some
               else None
             )
           } yield ()
@@ -141,76 +141,37 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
         case "помощь" =>
           sendMessage(message.peerId,
             s"""
-               |Пиши:
+               |👤: Как искать объявления?
+               |🐻: Напиши что ищешь от и до скольки, например:
                |Ноут от 5000 до 10000
-               |Или просто:
                |Системник до 20000
-               |Я найду подходящие предложения
-               |""".stripMargin, None,
-            Keyboard(
-              false,
-              List(
-                List(Button(Action("text", "Как добавить свое предложение?".some))),
-                List(Button(Action("text", "Сколько на данный момент предложений?".some))),
-                List(Button(Action("text", "В каком порядке идут предложения?".some))),
-                List(Button(Action("text", "Поиск".some), Some("primary"))),
-              )
-            ).some
-          )
-
-        case "еще" =>
-          sendMessage(message.peerId, s"Чет тебя не понял, ты что вообще хочешь? (Моник, мышку, блок питания и т. д.)")
-
-        case "привет" =>
-          sendMessage(message.peerId, "Медвед", None, helpButton)
-
-        case "сколько на данный момент предложений?" =>
-          for {
-            stats <- statsRepository.stats
-            _ <- sendMessage(message.peerId, s"Всего предложений ${stats._1}\nЗа последние 24 часа ${stats._2}")
-          } yield ()
-
-        case "в каком порядке идут предложения?" =>
-          sendMessage(message.peerId,
-            s"""
-               |Сначала показываю самые новые предложения
-               |Подряд предложения одного и того же автора
-               |не показываю
-               |""".stripMargin)
-
-        case "что еще умеешь?" =>
-          sendMessage(message.peerId,
-            s"""
-               |Умею
-               |* Запоминаю все объявления на стене и из других групп
-               |* Нахожу объявления по названию товара и цене
-               |* Учитываю проданные товары и не включаю их в поиск
-               |* Подсказываю в комментариях - сколько времени ушло
-               |на продажу товара
+               |Материнка от 1000
                |
-               |Скоро буду уметь:
-               |* Если отправить свою геопозицию - могу искать предложения рядом
-               |""".stripMargin)
-
-        case "как добавить свое предложение?" =>
-          sendMessage(message.peerId,
-            s"""
-               |Чтобы сделать свое предложение о продаже
-               |Предложи пост на стену в формате:
+               |👤: Как добавить свое объявление?
+               |🐻: Для этого предложи пост на стену в формате:
                |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
                |2. Цену в рублях
                |3. Описание
                |4. Приложи фотографии
                |5. Можешь прикрепить геопозицию - такие посты всегда привлекают
-               |""".stripMargin)
+               |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
+
+        case "еще" =>
+          sendMessage(message.peerId, s"Что еще ищешь?")
+
+        case "статистика" =>
+          for {
+            stats <- statsRepository.stats
+            _ <- sendMessage(message.peerId, s"Всего предложений ${stats._1}\nЗа последние 24 часа ${stats._2}")
+          } yield ()
 
         case _ =>
           sendMessage(message.peerId,
             s"""
-               |Напиши что ты ищешь (Системник, Ноут и т. д.)!
-               |Напиши 'помощь' - я напишу что умею
+               |Не очень понял тебя
+               |Напиши 'помощь' я подскажу что умею
                |""".stripMargin,
-            None, helpButton)
+            None, Keyboard(false, List(List(helpButton))).some)
       }
     } yield ()
 

@@ -26,7 +26,7 @@ case class StatsRepository[F[_]: Monad](transactor: Transactor[F]) extends Stats
       .unique
 
   private def offerNumLast24h =
-    sql"select count(id) from offer where date - (select extract(epoch from now())) < 24*60*60"
+    sql"select count(id) from offer where extract(epoch from now()) - date < 24*60*60"
       .query[Int]
       .unique
 }
