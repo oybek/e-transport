@@ -122,7 +122,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       states <- userStates.get
       offers = states.getOrElse(message.peerId, List())
       _ <- message.text.toLowerCase match {
-        case "еще" if offers.length >= 2 =>
+        case "еще" | "ещё" if offers.length >= 2 =>
           val rest = offers.tail
           for {
             _ <- userStates.modify { x =>
@@ -156,7 +156,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                |5. Можешь прикрепить геопозицию - такие посты всегда привлекают
                |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
 
-        case "еще" =>
+        case "еще" | "ещё" =>
           sendMessage(message.peerId, s"Что еще ищешь?")
 
         case "статистика" =>
