@@ -222,7 +222,6 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
               latitude = coord.map(_.latitude),
               longitude = coord.map(_.longitude)
             )
-          _ <- Sync[F].delay { log.info(s"Wallpost converted to $offer") }
           _ <- offerRepository.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
             sendMessage(

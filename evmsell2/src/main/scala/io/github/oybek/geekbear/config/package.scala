@@ -5,13 +5,9 @@ import io.github.oybek.geekbear.vk.api.GetLongPollServerReq
 import pureconfig.error.ConfigReaderException
 
 package object config {
-  case class Model(thingsNames: Map[String, List[String]], thingsRelations: Map[String, List[String]]) {
-    def isGood: Option[String] =
-      List(
-        if (thingsNames.values.forall(_.nonEmpty)) None else Some("things-names values must be non-empty arrays"),
-        if (thingsRelations.keys.forall(thingsNames.contains)) None else Some("things-relations keys must be subset of things-names keys"),
-        if (thingsRelations.values.forall(_.forall(thingsNames.contains))) None else Some("things-relations values must be subset of things-names keys")
-      ).flatten.headOption
+  case class Model(thingsNames: Map[String, List[String]]) {
+    def isGood: Boolean =
+      thingsNames.values.forall(_.nonEmpty)
   }
 
   case class DatabaseConfig(driver: String, url: String, user: String, password: String)
@@ -28,9 +24,8 @@ package object config {
       }.flatMap {
         case Left(e) => Sync[F].raiseError[Config](new ConfigReaderException[Config](e))
         case Right(config) =>
-          config.model
-            .isGood.map(x => Sync[F].raiseError[Config](new Throwable(x)))
-            .getOrElse(Sync[F].delay(config))
+          if (!config.model.isGood) Sync[F].raiseError[Config](new Throwable("things-names must contains nonempty lists"))
+          else Sync[F].delay(config)
       }
     }
   }
