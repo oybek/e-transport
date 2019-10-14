@@ -35,13 +35,24 @@ case class WallPostHandler(model: Model) {
         .filter(_.isDigit).toLong
       )
 
-  def getTType(text: String): Option[String] =
-    namesToTypes
+  def getTType(text: String): Option[String] = {
+    val wordsPos = namesToTypes
       .map { case (name, ttype) => (text indexOf name, ttype) }
       .filter { case (i, _) => i != -1 }
-      .foldLeft(Option.empty[(Int, String)]) {
-        case (None, (i, v)) => Some(i -> v)
-        case (Some(x), y) => Some(Seq(x, y).minBy(_._1))
-      }
-      .map(_._2)
+
+    // try to detect thing by components
+    model.thingsRelations.find {
+      case (_, components) =>
+        wordsPos.values.toSet subsetOf components.toSet
+    }.map {
+      case (thing, _) => thing
+    }.orElse {
+      wordsPos
+        .foldLeft(Option.empty[(Int, String)]) {
+          case (None, (i, v)) => Some(i -> v)
+          case (Some(x), y) => Some(Seq(x, y).minBy(_._1))
+        }
+        .map(_._2)
+    }
+  }
 }

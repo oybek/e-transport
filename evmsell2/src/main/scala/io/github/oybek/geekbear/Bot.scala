@@ -29,6 +29,8 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
 
   private val log = LoggerFactory.getLogger("bot")
 
+  private val helpButton = Button(Action("text", "помощь".some), Some("positive"))
+
   override def onMessageNew(message: MessageNew): F[Unit] =
     for {
       _ <- Sync[F].delay { log.info(s"Got message: $message") }
@@ -52,16 +54,15 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             s"""
               |Отлично! Я обновил твое местоположение 📍
               |${geo.place.map(_.title).getOrElse("")}
-              |""".stripMargin)
+              |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
         } yield ()
       }.getOrElse {
         if (message.text.toLowerCase == "начать") {
           sendMessage(message.peerId,
             """
               |Привет - Я Гик Медведь 🐻!
-              |В своей группе ВК я помогаю людям продать или купить компьютерную технику
               |Напиши 'помощь' и я подскажу что умею
-              |""".stripMargin)
+              |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
         } else {
           wallPostHandler.getTType(message.text.toLowerCase) match {
             case Some(thing) => whenNewSearch(message)(thing)
@@ -86,7 +87,9 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       }
       _ <- offers match {
         case Nil =>
-          sendMessage(message.peerId, s"Не нашел объявлений по твоему запросу")
+          sendMessage(message.peerId,
+            s"Нет объявлений по твоему запросу",
+            None, Keyboard(false, List(List(helpButton))).some)
         case offersNonEmpty =>
           def word(n: Int): String = n match {
             case 1 => "объявление"
@@ -102,11 +105,11 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             attachment = s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
             keyboard =
               if (offers.length > 1)
-                Keyboard(true, List(List(
-                  Button(Action("text", "еще".some))
+                Keyboard(false, List(List(
+                  Button(Action("text", s"еще [${offers.length-1}]".some)),
                 ))).some
               else
-                None
+                Keyboard(false, List(List(helpButton))).some
           )
       }
       _ <- userStates.modify {
@@ -119,7 +122,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       states <- userStates.get
       offers = states.getOrElse(message.peerId, List())
       _ <- message.text.toLowerCase match {
-        case "еще" if offers.length >= 2 =>
+        case "еще" | "ещё" if offers.length >= 2 =>
           val rest = offers.tail
           for {
             _ <- userStates.modify { x =>
@@ -130,7 +133,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
               if (rest.length == 1) "" else s"Еще ${rest.length-1} в списке",
               Some(s"wall${rest.head.groupId}_${rest.head.id}"),
               if (rest.length > 1)
-                Keyboard(true, List(List(Button(Action("text", "еще".some))))).some
+                Keyboard(false, List(List(Button(Action("text", s"еще [${rest.length-1}]".some))))).some
               else None
             )
           } yield ()
@@ -138,25 +141,23 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
         case "помощь" =>
           sendMessage(message.peerId,
             s"""
-               |Я нахожу объявления по названию товара, например:
-               |Ноут, Системник или Видяха и т. д. В этом всем
-               |я шарю - и знаю кто че продает.
-               |
-               |Еще если бабла маловато пиши:
+               |👤: Как искать объявления?
+               |🐻: Напиши что ищешь от и до скольки, например:
                |Ноут от 5000 до 10000
-               |Или просто:
                |Системник до 20000
-               |""".stripMargin
-          )
+               |Материнка от 1000
+               |
+               |👤: Как добавить свое объявление?
+               |🐻: Для этого предложи пост на стену в формате:
+               |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
+               |2. Цену в рублях
+               |3. Описание
+               |4. Приложи фотографии
+               |5. Можешь прикрепить геопозицию - такие посты всегда привлекают
+               |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
 
-        case "еще" =>
-          sendMessage(message.peerId, s"Чет тебя не понял, ты что вообще хочешь? (Моник, мышку, блок питания и т. д.)")
-
-        case "мед" =>
-          sendMessage(message.peerId, s"Где?!")
-
-        case "привет" =>
-          sendMessage(message.peerId, "Даров - Я Гик Медведь)")
+        case "еще" | "ещё" =>
+          sendMessage(message.peerId, s"Что еще ищешь?")
 
         case "статистика" =>
           for {
@@ -167,12 +168,10 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
         case _ =>
           sendMessage(message.peerId,
             s"""
-               |Я - Медведь - много чего человеческого не понимаю.
-               |Напиши просто что ты ищешь (Системник, Видяху, Ноут и т. д.)!
-               |Напиши 'помощь' - я напишу что умею
+               |Не очень понял тебя
+               |Напиши 'помощь' я подскажу что умею
                |""".stripMargin,
-            None,
-            Keyboard(true, List(List(Button(Action("text", "помощь".some))))).some)
+            None, Keyboard(false, List(List(helpButton))).some)
       }
     } yield ()
 
@@ -223,6 +222,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
               latitude = coord.map(_.latitude),
               longitude = coord.map(_.longitude)
             )
+          _ <- Sync[F].delay { log.info(s"Wallpost converted to $offer") }
           _ <- offerRepository.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
             sendMessage(
