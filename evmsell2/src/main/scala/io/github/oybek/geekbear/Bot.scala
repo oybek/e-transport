@@ -134,7 +134,8 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
               Some(s"wall${rest.head.groupId}_${rest.head.id}"),
               if (rest.length > 1)
                 Keyboard(false, List(List(Button(Action("text", s"еще [${rest.length-1}]".some))))).some
-              else None
+              else
+                Keyboard(false, List(List(helpButton))).some
             )
           } yield ()
 
