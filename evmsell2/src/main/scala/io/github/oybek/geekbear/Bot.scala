@@ -76,7 +76,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
     for {
       offers <- offerRepository.selectByTType(thing).map { offs =>
         val from = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
-        val to = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(1000000L)
+        val to = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
         offs.filter(offer =>
           offer.price.exists(x => x >= from && x <= to) &&
           /* TODO: Uncomment, when expaned to several citites offer.coord.exists(_.distKmTo(userPos) < 50) && */
@@ -163,7 +163,16 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
         case "статистика" =>
           for {
             stats <- statsRepository.stats
-            _ <- sendMessage(message.peerId, s"Всего предложений ${stats._1}\nЗа последние 24 часа ${stats._2}")
+            byTypeCount = stats._3.sortBy(- _._2).map {
+              case (ttype, count) => s"$ttype = $count"
+            }.mkString("\n")
+            _ <- sendMessage(message.peerId,
+              s"""
+                 |Всего предложений ${stats._1}
+                 |За последние 24 часа ${stats._2}
+                 |
+                 |$byTypeCount
+                 |""".stripMargin)
           } yield ()
 
         case _ =>
