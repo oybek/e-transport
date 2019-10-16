@@ -17,14 +17,15 @@ case class Jaw[F[_]: Sync: Timer](offerRepositoryAlgebra: OfferRepositoryAlgebra
   val ekb = Coord(56.8519f, 60.6122f)
 
   def breakfast(groupIds: List[Long], adminIds: List[Long]): F[List[Either[Throwable, Int]]] =
-    groupIds.flatTraverse ( groupId =>
-      (0 to 500 by 100).toList.flatTraverse { offset =>
+    groupIds.flatTraverse { groupId =>
+      val count = 100
+      (0 to 500 by count).toList.flatTraverse { offset =>
         for {
           wallGetRes <- vkApi.wallGet(
             WallGetReq(
               ownerId = groupId,
-              offset = 0,
-              count = offset,
+              offset = offset,
+              count = count,
               version = "5.101",
               accessToken = serviceKey))
           result <- wallGetRes.response.items.traverse { wallPost =>
@@ -35,5 +36,5 @@ case class Jaw[F[_]: Sync: Timer](offerRepositoryAlgebra: OfferRepositoryAlgebra
           _ <- Timer[F].sleep(1 second)
         } yield result
       }
-    )
+    }
 }

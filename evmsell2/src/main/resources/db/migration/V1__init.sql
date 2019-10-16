@@ -1,19 +1,19 @@
-
 CREATE TABLE offer (
-    id INTEGER PRIMARY KEY,
-    group_id INTEGER,
-    from_id INTEGER,
-    date INTEGER,
-    ttype TEXT,
-    text TEXT,
-    price INTEGER,
-    latitude FLOAT,
+    id        INTEGER NOT NULL,
+    group_id  INTEGER NOT NULL,
+    from_id   INTEGER NOT NULL,
+    date      INTEGER NOT NULL,
+    ttype     TEXT,
+    text      TEXT NOT NULL,
+    price     INTEGER,
+    latitude  FLOAT,
     longitude FLOAT,
-    sold INTEGER
+    sold      INTEGER,
+    PRIMARY KEY (id, group_id)
 );
 
 CREATE TABLE user_info (
-    id INTEGER PRIMARY KEY,
-    latitude FLOAT,
+    id        INTEGER PRIMARY KEY,
+    latitude  FLOAT,
     longitude FLOAT
 )
