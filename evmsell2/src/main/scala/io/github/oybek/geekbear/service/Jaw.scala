@@ -28,7 +28,7 @@ case class Jaw[F[_]: Sync: Timer](offerRepositoryAlgebra: OfferRepositoryAlgebra
               count = count,
               version = "5.101",
               accessToken = serviceKey))
-          result <- wallGetRes.response.items.traverse { wallPost =>
+          result <- wallGetRes.response.items.filter(_.markedAsAds.contains(0L)).traverse { wallPost =>
             val offer = wallPostHandler.wallPostToOffer(wallPost)
               .copy(latitude = ekb.latitude.some, longitude = ekb.longitude.some)
             offerRepositoryAlgebra.insert(offer).attempt
