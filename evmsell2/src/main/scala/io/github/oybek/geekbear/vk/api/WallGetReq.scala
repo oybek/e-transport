@@ -27,6 +27,8 @@ case class WallGetRes(response: Response)
 case class Response(count: Long, items: List[WallPostNew])
 
 object WallGetRes {
+  import io.github.oybek.geekbear.vk.Event.decodeGeo
+
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames
 
   implicit val decodeWallGet: Decoder[WallGetRes] = deriveConfiguredDecoder[WallGetRes]
