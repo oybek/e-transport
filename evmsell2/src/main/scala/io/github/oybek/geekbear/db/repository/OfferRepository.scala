@@ -12,9 +12,15 @@ trait OfferRepositoryAlgebra[F[_]] {
   def sold(id: Long, date: Long): F[Int]
   def selectByTType(ttype: String): F[List[Offer]]
   def selectById(id: Long): F[Option[Offer]]
+  def changeTType(id: Long, groupId: Long, ttype: String): F[Int]
 }
 
 case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends OfferRepositoryAlgebra[F] {
+
+  override def changeTType(id: Long, groupId: Long, ttype: String): F[Int] =
+    sql"""
+    update offer set ttype = $ttype where id = $id and group_id = $groupId
+    """.update.run.transact(transactor)
 
   override def sold(id: Long, date: Long): F[Int] =
     sql"""

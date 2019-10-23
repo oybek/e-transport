@@ -32,45 +32,65 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
   private val helpButton = Button(Action("text", "помощь".some), Some("positive"))
 
   override def onMessageNew(message: MessageNew): F[Unit] =
-    for {
-      _ <- Sync[F].delay { log.info(s"Got message: $message") }
+    message.text match {
+      case text if text.matches("жри -?[0-9]+") =>
+        "-?[0-9]+".r
+          .findFirstIn(text)
+          .traverse { groupId =>
+            for {
+              _ <- sendMessage(message.peerId, "Начинаю пожирать данную группу...")
+              res <- jaw.breakfast(List(groupId.toLong), adminIds)
+              _ <- sendMessage(message.peerId, s"Сожрал ${res.length} постов\nПереварил ${res.count(_.isRight)}")
+            } yield ()
+          }.whenA(adminIds.contains(message.peerId)).start.void
 
-      _ <- "жри -?[0-9]+".r
-        .findFirstIn(message.text.toLowerCase)
-        .traverse { q =>
-          val groupId = q.split(' ')(1).toLong
-          for {
-            _ <- sendMessage(message.peerId, "Начинаю пожирать данную группу...")
-            res <- jaw.breakfast(List(groupId), adminIds)
-            _ <- sendMessage(message.peerId, s"Сожрал ${res.length} постов\nПереварил ${res.count(_.isRight)}")
-          } yield ()
-        }.whenA(adminIds.contains(message.peerId)).start.void
+      case text if Seq(
+        text.startsWith("это")
+      ).forall(identity) =>
+        (text.split(' ') match {
+          case Array(_, textPart) =>
+            val ttype = wallPostHandler.getTType(textPart)
+            for {
+              states <- userStates.get
+              offers = states.getOrElse(message.peerId, List())
+              _ <- offers.headOption.traverse { offer =>
+                offerRepository.changeTType(offer.id, offer.groupId, ttype)
+              }
+            } yield ()
+            sendMessage(message.peerId, s"Обновил босс", None, None)
+          case _ =>
+            sendMessage(message.peerId, "И че это?", None, None)
+        }).whenA(adminIds.contains(message.peerId)).start.void
 
-      _ <- message.geo.map { geo =>
+      case text =>
         for {
-          _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
-          _ <- userRepository.upsert(message.peerId -> geo.coordinates)
-          _ <- sendMessage(message.peerId,
-            s"""
-              |Отлично! Я обновил твое местоположение 📍
-              |${geo.place.map(_.title).getOrElse("")}
-              |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
-        } yield ()
-      }.getOrElse {
-        if (message.text.toLowerCase == "начать") {
-          sendMessage(message.peerId,
-            """
-              |Привет - Я Гик Медведь 🐻!
-              |Напиши 'помощь' и я подскажу что умею
-              |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
-        } else {
-          wallPostHandler.getTType(message.text.toLowerCase) match {
-            case Some(thing) => whenNewSearch(message)(thing)
-            case None => whenNotSearch(message)
+          _ <- Sync[F].delay { log.info(s"Got message: $message") }
+          _ <- message.geo.map { geo =>
+            for {
+              _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
+              _ <- userRepository.upsert(message.peerId -> geo.coordinates)
+              _ <- sendMessage(message.peerId,
+                s"""
+                   |Отлично! Я обновил твое местоположение 📍
+                   |${geo.place.map(_.title).getOrElse("")}
+                   |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
+            } yield ()
+          }.getOrElse {
+            if (text == "начать") {
+              sendMessage(message.peerId,
+                """
+                  |Привет - Я Гик Медведь 🐻!
+                  |Напиши 'помощь' и я подскажу что умею
+                  |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
+            } else {
+              wallPostHandler.getTType(text) match {
+                case Some(thing) => whenNewSearch(message)(thing)
+                case None => whenNotSearch(message)
+              }
+            }
           }
-        }
-      }
-    } yield ()
+        } yield ()
+    }
 
   def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
     for {
@@ -122,6 +142,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       states <- userStates.get
       offers = states.getOrElse(message.peerId, List())
       _ <- message.text.toLowerCase match {
+
         case "еще" | "ещё" if offers.length >= 2 =>
           val rest = offers.tail
           for {
