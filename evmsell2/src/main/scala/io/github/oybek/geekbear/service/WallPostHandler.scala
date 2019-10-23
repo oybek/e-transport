@@ -35,6 +35,9 @@ case class WallPostHandler(model: Model) {
         .filter(_.isDigit).toLong
       )
 
+  def getRussianName(ttype: String): String =
+    model.thingsNames.get(ttype).flatMap(_.headOption).getOrElse("Нечто")
+
   def getTType(text: String): Option[String] =
     namesToTypes
       .map { case (name, ttype) => (text indexOf name, ttype) }

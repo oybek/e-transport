@@ -29,7 +29,15 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
 
   private val log = LoggerFactory.getLogger("bot")
 
+  private val searchButton = Button(Action("text", "поиск".some))
   private val helpButton = Button(Action("text", "помощь".some), Some("positive"))
+  private val statButton = Button(Action("text", "статистика".some))
+  private def defaultKeyboard(topButton: Option[Button] = None) = Keyboard(
+    oneTime = false,
+    buttons =
+      (if (topButton.nonEmpty) List(List(topButton.get)) else List()) ++
+      List(List(searchButton, helpButton, statButton))
+  ).some
 
   override def onMessageNew(message: MessageNew): F[Unit] =
     message.text match {
@@ -81,7 +89,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                 s"""
                    |Отлично! Я обновил твое местоположение 📍
                    |${geo.place.map(_.title).getOrElse("")}
-                   |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
+                   |""".stripMargin, None, defaultKeyboard())
             } yield ()
           }.getOrElse {
             if (text == "начать") {
@@ -89,7 +97,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                 """
                   |Привет - Я Гик Медведь 🐻!
                   |Напиши 'помощь' и я подскажу что умею
-                  |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
+                  |""".stripMargin, None, defaultKeyboard())
             } else {
               wallPostHandler.getTType(text) match {
                 case Some(thing) => whenNewSearch(message)(thing)
@@ -115,9 +123,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       }
       _ <- offers match {
         case Nil =>
-          sendMessage(message.peerId,
-            s"Нет объявлений по твоему запросу",
-            None, Keyboard(false, List(List(helpButton))).some)
+          sendMessage(message.peerId, s"Нет объявлений по твоему запросу", None, defaultKeyboard())
         case offersNonEmpty =>
           def word(n: Int): String = n match {
             case 1 => "объявление"
@@ -133,11 +139,11 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             attachment = s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
             keyboard =
               if (offers.length > 1)
-                Keyboard(false, List(List(
-                  Button(Action("text", s"еще [${offers.length-1}]".some)),
-                ))).some
+                defaultKeyboard(Some(
+                  Button(Action("text", Some(s"еще [${offers.length-1}]")))
+                ))
               else
-                Keyboard(false, List(List(helpButton))).some
+                defaultKeyboard()
           )
       }
       _ <- userStates.modify {
@@ -162,29 +168,31 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
               if (rest.length == 1) "" else s"Еще ${rest.length-1} в списке",
               Some(s"wall${rest.head.groupId}_${rest.head.id}"),
               if (rest.length > 1)
-                Keyboard(false, List(List(Button(Action("text", s"еще [${rest.length-1}]".some))))).some
+                defaultKeyboard(Some(
+                  Button(Action("text", Some(s"еще [${rest.length-1}]")))
+                ))
               else
-                Keyboard(false, List(List(helpButton))).some
+                defaultKeyboard()
             )
           } yield ()
 
         case "помощь" =>
           sendMessage(message.peerId,
             s"""
-               |👤: Как искать объявления?
-               |🐻: Напиши что ищешь от и до скольки, например:
-               |Ноут от 5000 до 10000
-               |Системник до 20000
-               |Материнка от 1000
-               |
-               |👤: Как добавить свое объявление?
+               |Могу добавить твое объявление в поиск
                |🐻: Для этого предложи пост на стену в формате:
                |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
                |2. Цену в рублях
-               |3. Описание
-               |4. Приложи фотографии
-               |5. Можешь прикрепить геопозицию - такие посты всегда привлекают
-               |""".stripMargin, None, Keyboard(false, List(List(helpButton))).some)
+               |3. Описание и фотки
+               |
+               |Помогу найти нужную вещь
+               |🐻: Напиши что ищешь от и до скольки, например:
+               |Системник до 20000
+               |Материнка от 1000 до 3000
+               |
+               |Подскажу сколько есть объявлений по каждому товару
+               |🐻: Напиши "статистика" и я подскажу
+               |""".stripMargin, None, defaultKeyboard())
 
         case "еще" | "ещё" =>
           sendMessage(message.peerId, s"Что еще ищешь?")
@@ -193,7 +201,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
           for {
             stats <- statsRepository.stats
             byTypeCount = stats._3.sortBy(- _._2).map {
-              case (ttype, count) => s"$ttype = $count"
+              case (ttype, count) => s"${wallPostHandler.getRussianName(ttype)} = $count штук"
             }.mkString("\n")
             _ <- sendMessage(message.peerId,
               s"""
@@ -204,13 +212,15 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                  |""".stripMargin)
           } yield ()
 
+        case "поиск" => sendMessage(message.peerId, "Что ищешь?", None, defaultKeyboard())
+
         case _ =>
           sendMessage(message.peerId,
             s"""
                |Не очень понял тебя
                |Напиши 'помощь' я подскажу что умею
                |""".stripMargin,
-            None, Keyboard(false, List(List(helpButton))).some)
+            None, defaultKeyboard())
       }
     } yield ()
 
