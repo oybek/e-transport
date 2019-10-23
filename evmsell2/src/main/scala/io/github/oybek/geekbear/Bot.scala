@@ -49,15 +49,23 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       ).forall(identity) =>
         (text.split(' ') match {
           case Array(_, textPart) =>
-            val ttype = wallPostHandler.getTType(textPart)
             for {
               states <- userStates.get
               offers = states.getOrElse(message.peerId, List())
-              _ <- offers.headOption.traverse { offer =>
-                offerRepository.changeTType(offer.id, offer.groupId, ttype)
+              query = for {
+                offer <- offers.headOption
+                ttype <- wallPostHandler.getTType(textPart)
+              } yield (offer, ttype)
+              _ <- query match {
+                case None =>
+                  sendMessage(message.peerId, "Чегооо блять?", None, None)
+                case Some((offer, ttype)) =>
+                  for {
+                    _ <- offerRepository.changeTType(offer.id, offer.groupId, ttype)
+                    _ <- sendMessage(message.peerId, "Обновил босс", None, None)
+                  }  yield ()
               }
             } yield ()
-            sendMessage(message.peerId, s"Обновил босс", None, None)
           case _ =>
             sendMessage(message.peerId, "И че это?", None, None)
         }).whenA(adminIds.contains(message.peerId)).start.void
