@@ -13,7 +13,7 @@ case class WallPostHandler(model: Model) {
           model.dict.getOrElse(x.tail, List())
         else
           List(x)
-      }
+      }.map(_.toLowerCase)
   }
 
   def wallPostToOffer(wallPost: WallPostNew): Offer = {
