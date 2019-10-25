@@ -19,7 +19,7 @@ case class Jaw[F[_]: Sync: Timer](offerRepositoryAlgebra: OfferRepositoryAlgebra
   def breakfast(groupIds: List[Long], adminIds: List[Long]): F[List[Either[Throwable, Int]]] =
     groupIds.flatTraverse { groupId =>
       val count = 100
-      (0 to 500 by count).toList.flatTraverse { offset =>
+      (0 to 900 by count).toList.flatTraverse { offset =>
         for {
           wallGetRes <- vkApi.wallGet(
             WallGetReq(
