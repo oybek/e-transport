@@ -92,17 +92,9 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                    |""".stripMargin, None, defaultKeyboard())
             } yield ()
           }.getOrElse {
-            if (text == "начать") {
-              sendMessage(message.peerId,
-                """
-                  |Привет - Я Гик Медведь 🐻!
-                  |Напиши 'помощь' и я подскажу что умею
-                  |""".stripMargin, None, defaultKeyboard())
-            } else {
-              wallPostHandler.getTType(text) match {
-                case Some(thing) => whenNewSearch(message)(thing)
-                case None => whenNotSearch(message)
-              }
+            wallPostHandler.getTType(text) match {
+              case Some(thing) => whenNewSearch(message)(thing)
+              case None => whenNotSearch(message)
             }
           }
         } yield ()
@@ -111,10 +103,10 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
   def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
     for {
       offers <- offerRepository.selectByTType(thing).map { offs =>
-        val from = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
-        val to = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
+        val minPrice = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
+        val maxPrice = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
         offs.filter(offer =>
-          offer.price.exists(x => x >= from && x <= to) &&
+          offer.price.exists(x => x >= minPrice && x <= maxPrice) &&
           /* TODO: Uncomment, when expaned to several citites offer.coord.exists(_.distKmTo(userPos) < 50) && */
           offer.sold.isEmpty
         ).sortWith {
@@ -176,23 +168,30 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             )
           } yield ()
 
-        case "помощь" =>
-          sendMessage(message.peerId,
-            s"""
-               |Могу добавить твое объявление в поиск
-               |🐻: Для этого предложи пост на стену в формате:
-               |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
-               |2. Цену в рублях
-               |3. Описание и фотки
-               |
-               |Помогу найти нужную вещь
-               |🐻: Напиши что ищешь от и до скольки, например:
-               |Системник до 20000
-               |Материнка от 1000 до 3000
-               |
-               |Подскажу сколько есть объявлений по каждому товару
-               |🐻: Напиши "статистика" и я подскажу
-               |""".stripMargin, None, defaultKeyboard())
+        case "помощь" | "начать" =>
+          for {
+            _ <- sendMessage(message.peerId,
+              """
+                |Привет - Я Гик Медведь!
+                |""".stripMargin, None, defaultKeyboard()).whenA(message.text.toLowerCase == "начать")
+            _ <- sendMessage(message.peerId,
+             s"""
+                |🐻 Я могу добавить твое объявление в поиск
+                |Для этого предложи пост на стену в формате:
+                |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
+                |2. Цену в рублях
+                |3. Описание и фотки
+                |4. Город (По умолчанию Екатеринбург)
+                |
+                |🐻 Помогу найти нужную вещь
+                |Напиши что ищешь от и до скольки, например:
+                |Системник до 20000
+                |Материнка от 1000 до 3000
+                |
+                |🐻 Подскажу сколько есть объявлений по каждому товару
+                |Напиши "статистика"
+                |""".stripMargin, None, defaultKeyboard())
+          } yield ()
 
         case "еще" | "ещё" =>
           sendMessage(message.peerId, s"Что еще ищешь?")
