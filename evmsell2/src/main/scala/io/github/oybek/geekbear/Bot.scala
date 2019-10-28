@@ -303,7 +303,8 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
               WallCommentReq(
                 ownerId = -getLongPollServerReq.groupId.toLong,
                 postId = offer.id,
-                message = s"Продан за ${wallReplyNew.date - offer.date} секунд",
+                message = s"Продан в течении ${daysHours(wallReplyNew.date - offer.date)}",
+                replyToComment = wallReplyNew.id,
                 version = getLongPollServerReq.version,
                 accessToken = getLongPollServerReq.accessToken,
               )
@@ -313,4 +314,10 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       } yield()
       case _ => Sync[F].delay().void
     }
+
+  private def daysHours(seconds: Long): String = {
+    val days = seconds/(24*60*60)
+    val hours = seconds%(24*60*60)/(60*60)
+    s"${if (days > 0) days + " суток" else ""} ${if (hours > 0) hours + " часов" else " часа" }"
+  }
 }
