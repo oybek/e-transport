@@ -4,7 +4,7 @@ import cats.implicits._
 import cats.effect.{Async, Concurrent, Sync, Timer}
 import cats.effect.syntax.all._
 import cats.effect.concurrent.Ref
-import io.github.oybek.geekbear.db.repository.{OfferRepository, OfferRepositoryAlgebra, StatsRepositoryAlgebra, UserRepository, UserRepositoryAlgebra}
+import io.github.oybek.geekbear.db.repository.Repositories
 import io.github.oybek.geekbear.model.Offer
 import io.github.oybek.geekbear.service.{CityServiceAlg, Jaw, WallPostHandler}
 import io.github.oybek.geekbear.vk._
@@ -16,9 +16,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                                               userStates: Ref[F, Map[Long, List[Offer]]],
                                               vkApi: VkApi[F],
                                               cityServiceAlg: CityServiceAlg[F],
-                                              offerRepository: OfferRepositoryAlgebra[F],
-                                              userRepository: UserRepositoryAlgebra[F],
-                                              statsRepository: StatsRepositoryAlgebra[F],
+                                              repo: Repositories[F],
                                               getLongPollServerReq: GetLongPollServerReq,
                                               jaw: Jaw[F],
                                               wallPostHandler: WallPostHandler)
@@ -70,7 +68,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                   sendMessage(message.peerId, "Чегооо блять?", None, None)
                 case Some((offer, ttype)) =>
                   for {
-                    _ <- offerRepository.changeTType(offer.id, offer.groupId, ttype)
+                    _ <- repo.ofOffer.changeTType(offer.id, offer.groupId, ttype)
                     _ <- sendMessage(message.peerId, "Обновил босс", None, None)
                   }  yield ()
               }
@@ -86,7 +84,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             for {
               cityId <- Sync[F].pure(0)
               _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
-              _ <- userRepository.upsert(message.peerId -> cityId)
+              _ <- repo.ofUser.upsert(message.peerId -> cityId)
               _ <- sendMessage(message.peerId,
                 s"""
                    |Отлично! Я обновил твое местоположение 📍
@@ -104,7 +102,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
 
   def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
     for {
-      offers <- offerRepository.selectByTType(thing).map { offs =>
+      offers <- repo.ofOffer.selectByTType(thing).map { offs =>
         val minPrice = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
         val maxPrice = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
         offs.filter(offer =>
@@ -200,7 +198,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
 
         case "статистика" =>
           for {
-            stats <- statsRepository.stats
+            stats <- repo.ofStat.stats
             byTypeCount = stats._3.sortBy(- _._2).map {
               case (ttype, count) => s"${wallPostHandler.getRussianName(ttype)} = $count штук"
             }.mkString("\n")
@@ -265,12 +263,12 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
             cityId <- city.map(_.id)
           } yield userId -> cityId
 
-          _ <- userInfo.traverse(x => userRepository.upsert(x))
-          city <- wallPostNew.signerId.flatTraverse(userRepository.cityOf)
+          _ <- userInfo.traverse(x => repo.ofUser.upsert(x))
+          city <- wallPostNew.signerId.flatTraverse(repo.ofUser.cityOf)
 
           offer = wallPostHandler.wallPostToOffer(wallPostNew)
             .copy(city = city)
-          _ <- offerRepository.insert(offer)
+          _ <- repo.ofOffer.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
             sendMessage(
               signerId,
@@ -293,12 +291,12 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
   override def onWallReplyNew(wallReplyNew: WallReplyNew): F[Unit] =
     wallReplyNew.text.toLowerCase match {
       case "продан" => for {
-        offerOpt <- offerRepository.selectById(wallReplyNew.postId)
+        offerOpt <- repo.ofOffer.selectById(wallReplyNew.postId)
         _ <- offerOpt.filter { offer =>
           offer.fromId == wallReplyNew.fromId && offer.sold.isEmpty
         }.traverse { offer =>
           for {
-            _ <- offerRepository.sold(offer.id, wallReplyNew.date)
+            _ <- repo.ofOffer.sold(offer.id, wallReplyNew.date)
             _ <- vkApi.wallComment(
               WallCommentReq(
                 ownerId = -getLongPollServerReq.groupId.toLong,

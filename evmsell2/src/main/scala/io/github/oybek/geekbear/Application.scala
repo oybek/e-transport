@@ -4,7 +4,7 @@ import cats.implicits._
 import cats.effect.concurrent.Ref
 import config.Config
 import io.github.oybek.geekbear.db.DB
-import io.github.oybek.geekbear.db.repository.{OfferRepository, StatsRepository, UserRepository}
+import io.github.oybek.geekbear.db.repository.{OfferRepository, Repositories, StatsRepository, UserRepository}
 import io.github.oybek.geekbear.model.Offer
 import io.github.oybek.geekbear.service.{CityService, Jaw, WallPostHandler}
 import monix.eval.Task
@@ -26,16 +26,18 @@ object Application extends App {
       transactor <- DB.transactor[Task](config.database)
       wallPostHandler = WallPostHandler(config.model)
       cityService = CityService[Task]()
-      offerRepository = OfferRepository(transactor)
-      userRepository = UserRepository(transactor)
-      statsRepository = StatsRepository(transactor)
+      repos = Repositories(
+        OfferRepository(transactor),
+        StatsRepository(transactor),
+        UserRepository(transactor)
+      )
       _ <- DB.initialize(transactor)
       _ <- BlazeClientBuilder[Task](global)
         .withResponseHeaderTimeout(FiniteDuration(60, TimeUnit.SECONDS))
         .resource.use { httpClient =>
           val client = Logger(logHeaders = false, logBody = true)(httpClient)
           val vkApi = VkApiHttp4s[Task](client)
-          val jaw = Jaw(userRepository, offerRepository, wallPostHandler, vkApi, cityService, config.serviceKey)
+          val jaw = Jaw(repos, wallPostHandler, vkApi, cityService, config.serviceKey)
 
           for {
             _ <- Bot[Task](
@@ -43,7 +45,7 @@ object Application extends App {
               userStates,
               vkApi,
               cityService,
-              offerRepository, userRepository, statsRepository,
+              repos,
               config.getLongPollServerReq,
               jaw,
               wallPostHandler

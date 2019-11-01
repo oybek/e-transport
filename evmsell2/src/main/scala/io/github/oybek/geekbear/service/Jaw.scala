@@ -4,14 +4,13 @@ import cats.instances.option._
 import cats.instances.list._
 import cats.syntax.all._
 import cats.effect._
-import io.github.oybek.geekbear.db.repository.{OfferRepositoryAlgebra, UserRepositoryAlgebra}
+import io.github.oybek.geekbear.db.repository.{OfferRepositoryAlgebra, Repositories, UserRepositoryAlgebra}
 import io.github.oybek.geekbear.vk.Coord
 import io.github.oybek.geekbear.vk.api.{VkApi, WallGetReq}
 
 import scala.concurrent.duration._
 
-case class Jaw[F[_]: Sync: Timer](userRepositoryAlgebra: UserRepositoryAlgebra[F],
-                                  offerRepositoryAlgebra: OfferRepositoryAlgebra[F],
+case class Jaw[F[_]: Sync: Timer](repository: Repositories[F],
                                   wallPostHandler: WallPostHandler,
                                   vkApi: VkApi[F],
                                   cityService: CityServiceAlg[F],
@@ -35,8 +34,8 @@ case class Jaw[F[_]: Sync: Timer](userRepositoryAlgebra: UserRepositoryAlgebra[F
                 wallPostHandler.wallPostToOffer(wallPost)
                   .copy(city = city.map(_.id))
               }
-              _ <- offer.city.traverse(cityId => userRepositoryAlgebra.upsert(offer.fromId -> cityId))
-              res <- offerRepositoryAlgebra.insert(offer).attempt
+              _ <- offer.city.traverse(cityId => repository.ofUser.upsert(offer.fromId -> cityId))
+              res <- repository.ofOffer.insert(offer).attempt
             } yield res
           }
           _ <- Timer[F].sleep(1 second)
