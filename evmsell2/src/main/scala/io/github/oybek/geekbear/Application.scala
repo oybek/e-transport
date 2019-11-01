@@ -6,7 +6,7 @@ import config.Config
 import io.github.oybek.geekbear.db.DB
 import io.github.oybek.geekbear.db.repository.{OfferRepository, StatsRepository, UserRepository}
 import io.github.oybek.geekbear.model.Offer
-import io.github.oybek.geekbear.service.{Jaw, WallPostHandler}
+import io.github.oybek.geekbear.service.{CityService, Jaw, WallPostHandler}
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import org.http4s.client.blaze.{BlazeClientBuilder, BlazeClientConfig}
@@ -25,6 +25,7 @@ object Application extends App {
       config <- Config.load[Task]()
       transactor <- DB.transactor[Task](config.database)
       wallPostHandler = WallPostHandler(config.model)
+      cityService = CityService[Task]()
       offerRepository = OfferRepository(transactor)
       userRepository = UserRepository(transactor)
       statsRepository = StatsRepository(transactor)
@@ -34,13 +35,14 @@ object Application extends App {
         .resource.use { httpClient =>
           val client = Logger(logHeaders = false, logBody = true)(httpClient)
           val vkApi = VkApiHttp4s[Task](client)
-          val jaw = Jaw(offerRepository, wallPostHandler, vkApi, config.serviceKey)
+          val jaw = Jaw(userRepository, offerRepository, wallPostHandler, vkApi, cityService, config.serviceKey)
 
           for {
             _ <- Bot[Task](
               client,
               userStates,
               vkApi,
+              cityService,
               offerRepository, userRepository, statsRepository,
               config.getLongPollServerReq,
               jaw,

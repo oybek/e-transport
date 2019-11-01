@@ -6,7 +6,7 @@ import cats.effect.syntax.all._
 import cats.effect.concurrent.Ref
 import io.github.oybek.geekbear.db.repository.{OfferRepository, OfferRepositoryAlgebra, StatsRepositoryAlgebra, UserRepository, UserRepositoryAlgebra}
 import io.github.oybek.geekbear.model.Offer
-import io.github.oybek.geekbear.service.{Jaw, WallPostHandler}
+import io.github.oybek.geekbear.service.{CityServiceAlg, Jaw, WallPostHandler}
 import io.github.oybek.geekbear.vk._
 import io.github.oybek.geekbear.vk.api.{Action, Button, GetLongPollServerReq, Keyboard, SendMessageReq, VkApi, WallCommentReq}
 import org.http4s.client.Client
@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                                               userStates: Ref[F, Map[Long, List[Offer]]],
                                               vkApi: VkApi[F],
+                                              cityServiceAlg: CityServiceAlg[F],
                                               offerRepository: OfferRepositoryAlgebra[F],
                                               userRepository: UserRepositoryAlgebra[F],
                                               statsRepository: StatsRepositoryAlgebra[F],
@@ -47,10 +48,10 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
           .traverse { groupId =>
             for {
               _ <- sendMessage(message.peerId, "Начинаю пожирать данную группу...")
-              res <- jaw.breakfast(List(groupId.toLong), adminIds)
+              res <- jaw.breakfast(List(groupId.toLong), adminIds, message.geo.map(_.coordinates))
               _ <- sendMessage(message.peerId, s"Сожрал ${res.length} постов\nПереварил ${res.count(_.isRight)}")
             } yield ()
-          }.whenA(adminIds.contains(message.peerId)).start.void
+          }.whenA(adminIds.contains(message.peerId) && message.geo.nonEmpty).start.void
 
       case text if Seq(
         text.startsWith("это")
@@ -83,8 +84,9 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
           _ <- Sync[F].delay { log.info(s"Got message: $message") }
           _ <- message.geo.map { geo =>
             for {
+              cityId <- Sync[F].pure(0)
               _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
-              _ <- userRepository.upsert(message.peerId -> geo.coordinates)
+              _ <- userRepository.upsert(message.peerId -> cityId)
               _ <- sendMessage(message.peerId,
                 s"""
                    |Отлично! Я обновил твое местоположение 📍
@@ -256,20 +258,18 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       case Some("post") =>
         for {
           _ <- Sync[F].delay { log.info(s"Posting new wallpost: ${wallPostNew.toString}") }
+          city <- wallPostNew.geo.traverse(geo => cityServiceAlg.findByCoord(geo.coordinates))
 
           userInfo = for {
             userId <- wallPostNew.signerId
-            geo <- wallPostNew.geo
-          } yield userId -> geo.coordinates
+            cityId <- city.map(_.id)
+          } yield userId -> cityId
 
           _ <- userInfo.traverse(x => userRepository.upsert(x))
-          coord <- wallPostNew.signerId.flatTraverse(userRepository.coordById)
+          city <- wallPostNew.signerId.flatTraverse(userRepository.cityOf)
 
           offer = wallPostHandler.wallPostToOffer(wallPostNew)
-            .copy(
-              latitude = coord.map(_.latitude),
-              longitude = coord.map(_.longitude)
-            )
+            .copy(city = city)
           _ <- offerRepository.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
             sendMessage(

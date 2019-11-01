@@ -1,0 +1,1 @@
+UPDATE offer set city = 829 WHERE city is null;

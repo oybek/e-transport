@@ -45,8 +45,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
       ttype,
       text,
       price,
-      latitude,
-      longitude,
+      city,
       sold
     from offer where ttype = $ttype
   """.query[Offer]
@@ -60,8 +59,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
       ttype,
       text,
       price,
-      latitude,
-      longitude,
+      city,
       sold
     from offer where id = $id
   """.query[Offer]
@@ -75,8 +73,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
       ttype,
       text,
       price,
-      latitude,
-      longitude,
+      city,
       sold
     ) values (
       ${offer.id},
@@ -86,8 +83,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
       ${offer.ttype},
       ${offer.text},
       ${offer.price},
-      ${offer.latitude},
-      ${offer.longitude},
+      ${offer.city},
       ${offer.sold}
     );
   """.update

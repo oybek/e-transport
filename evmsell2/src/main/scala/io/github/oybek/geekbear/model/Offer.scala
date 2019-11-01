@@ -9,12 +9,5 @@ case class Offer(id: Long,
                  ttype: Option[String],
                  text: String,
                  price: Option[Long],
-                 latitude: Option[Float] = None,
-                 longitude: Option[Float] = None,
-                 sold: Option[Long] = None) {
-  lazy val coord: Option[Coord] =
-    for {
-      lat <- latitude
-      lon <- longitude
-    } yield Coord(lat, lon)
-}
+                 city: Option[Int] = None,
+                 sold: Option[Long] = None)

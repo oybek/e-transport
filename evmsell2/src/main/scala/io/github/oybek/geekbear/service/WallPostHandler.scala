@@ -26,8 +26,7 @@ case class WallPostHandler(model: Model) {
       text = wallPost.text,
       price = getPrice(text),
       ttype = getTType(text),
-      latitude = wallPost.geo.map(_.coordinates.latitude),
-      longitude = wallPost.geo.map(_.coordinates.longitude)
+      city = Some(0),
     )
   }
 
