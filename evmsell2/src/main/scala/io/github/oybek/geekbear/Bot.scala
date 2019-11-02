@@ -12,8 +12,7 @@ import io.github.oybek.geekbear.vk.api.{Action, Button, GetLongPollServerReq, Ke
 import org.http4s.client.Client
 import org.slf4j.LoggerFactory
 
-case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
-                                              userStates: Ref[F, Map[Long, List[Offer]]],
+case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates: Ref[F, Map[Long, List[Offer]]],
                                               vkApi: VkApi[F],
                                               cityServiceAlg: CityServiceAlg[F],
                                               repo: Repositories[F],
@@ -22,20 +21,20 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                                               wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
-  private val cityToGeo = Map("Екатеринбург" -> Coord(56.8519f, 60.6122f))
+  private val defaultCity = 829
 
   private val adminIds = List(213461412L)
 
   private val log = LoggerFactory.getLogger("bot")
 
-  private val searchButton = Button(Action("text", "поиск".some))
-  private val helpButton = Button(Action("text", "помощь".some), Some("positive"))
+  private val cityButton = Button(Action("text", "город поиска".some))
+  private val helpButton = Button(Action("text", "помощь".some))
   private val statButton = Button(Action("text", "статистика".some))
   private def defaultKeyboard(topButton: Option[Button] = None) = Keyboard(
     oneTime = false,
     buttons =
       (if (topButton.nonEmpty) List(List(topButton.get)) else List()) ++
-      List(List(searchButton, helpButton, statButton))
+      List(List(cityButton, helpButton, statButton))
   ).some
 
   override def onMessageNew(message: MessageNew): F[Unit] =
@@ -80,15 +79,17 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
       case text =>
         for {
           _ <- Sync[F].delay { log.info(s"Got message: $message") }
+          cityOfUser <- repo.ofUser.cityOf(message.fromId)
+          _ <- repo.ofUser.upsert(message.fromId -> defaultCity).whenA(cityOfUser.isEmpty)
           _ <- message.geo.map { geo =>
             for {
-              cityId <- Sync[F].pure(0)
+              city <- cityServiceAlg.findByCoord(geo.coordinates)
               _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
-              _ <- repo.ofUser.upsert(message.peerId -> cityId)
+              _ <- repo.ofUser.upsert(message.peerId -> city.id)
               _ <- sendMessage(message.peerId,
                 s"""
-                   |Отлично! Я обновил твое местоположение 📍
-                   |${geo.place.map(_.title).getOrElse("")}
+                   |Отлично!
+                   |Теперь я буду искать объявления в городе ${city.name}
                    |""".stripMargin, None, defaultKeyboard())
             } yield ()
           }.getOrElse {
@@ -107,7 +108,6 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
         val maxPrice = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
         offs.filter(offer =>
           offer.price.exists(x => x >= minPrice && x <= maxPrice) &&
-          /* TODO: Uncomment, when expaned to several citites offer.coord.exists(_.distKmTo(userPos) < 50) && */
           offer.sold.isEmpty
         ).sortWith {
           case (off1, off2) => off1.date > off2.date
@@ -176,17 +176,17 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                 |""".stripMargin, None, defaultKeyboard()).whenA(message.text.toLowerCase == "начать")
             _ <- sendMessage(message.peerId,
              s"""
+                |🐻 Помогу найти нужную вещь
+                |Напиши что ищешь от и до скольки, например:
+                |Системник до 20000
+                |Материнка от 1000 до 3000
+                |
                 |🐻 Я могу добавить твое объявление в поиск
                 |Для этого предложи пост на стену в формате:
                 |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
                 |2. Цену в рублях
                 |3. Описание и фотки
                 |4. Город (По умолчанию Екатеринбург)
-                |
-                |🐻 Помогу найти нужную вещь
-                |Напиши что ищешь от и до скольки, например:
-                |Системник до 20000
-                |Материнка от 1000 до 3000
                 |
                 |🐻 Подскажу сколько есть объявлений по каждому товару
                 |Напиши "статистика"
@@ -211,7 +211,19 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F],
                  |""".stripMargin)
           } yield ()
 
-        case "поиск" => sendMessage(message.peerId, "Что ищешь?", None, defaultKeyboard())
+        case "город поиска" =>
+          for {
+            userOpt <- repo.ofUser.selectById(message.fromId)
+            city <- userOpt.flatTraverse {
+              case (userId, cityId) => repo.ofCity.selectById(cityId)
+            }
+            cityText = city.map(_.name).getOrElse("Не определен")
+            _ <- sendMessage(message.peerId,
+              s"""
+                 |Твой город поиска: $cityText
+                 |Отправь геопозицию если хочешь сменить город поиска
+                 |""".stripMargin, None, defaultKeyboard())
+          } yield ()
 
         case _ =>
           sendMessage(message.peerId,

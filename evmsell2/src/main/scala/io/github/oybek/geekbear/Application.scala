@@ -4,7 +4,7 @@ import cats.implicits._
 import cats.effect.concurrent.Ref
 import config.Config
 import io.github.oybek.geekbear.db.DB
-import io.github.oybek.geekbear.db.repository.{OfferRepository, Repositories, StatsRepository, UserRepository}
+import io.github.oybek.geekbear.db.repository._
 import io.github.oybek.geekbear.model.Offer
 import io.github.oybek.geekbear.service.{CityService, Jaw, WallPostHandler}
 import monix.eval.Task
@@ -25,12 +25,13 @@ object Application extends App {
       config <- Config.load[Task]()
       transactor <- DB.transactor[Task](config.database)
       wallPostHandler = WallPostHandler(config.model)
-      cityService = CityService[Task]()
       repos = Repositories(
         OfferRepository(transactor),
         StatsRepository(transactor),
+        CityRepository(transactor),
         UserRepository(transactor)
       )
+      cityService = CityService[Task](repos)
       _ <- DB.initialize(transactor)
       _ <- BlazeClientBuilder[Task](global)
         .withResponseHeaderTimeout(FiniteDuration(60, TimeUnit.SECONDS))
