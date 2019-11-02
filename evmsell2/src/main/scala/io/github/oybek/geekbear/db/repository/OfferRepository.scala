@@ -10,7 +10,7 @@ import io.github.oybek.geekbear.model.Offer
 trait OfferRepositoryAlgebra[F[_]] {
   def insert(offer: Offer): F[Int]
   def sold(id: Long, date: Long): F[Int]
-  def selectByTType(ttype: String): F[List[Offer]]
+  def selectByTTypeAndCity(ttype: String, cityId: Int): F[List[Offer]]
   def selectById(id: Long): F[Option[Offer]]
   def changeTType(id: Long, groupId: Long, ttype: String): F[Int]
 }
@@ -33,10 +33,10 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
   override def insert(offer: Offer): F[Int] =
     insertSql(offer).run.transact(transactor)
 
-  override def selectByTType(ttype: String): F[List[Offer]] =
-    selectByTTypeSql(ttype).to[List].transact(transactor)
+  override def selectByTTypeAndCity(ttype: String, cityId: Int): F[List[Offer]] =
+    selectByTTypeSql(ttype, cityId).to[List].transact(transactor)
 
-  private def selectByTTypeSql(ttype: String): Query0[Offer] = sql"""
+  private def selectByTTypeSql(ttype: String, cityId: Int): Query0[Offer] = sql"""
     select
       id,
       group_id,
@@ -47,7 +47,7 @@ case class OfferRepository[F[_]: Monad](transactor: Transactor[F]) extends Offer
       price,
       city,
       sold
-    from offer where ttype = $ttype
+    from offer where ttype = $ttype and city = $cityId
   """.query[Offer]
 
   private def selectByIdSql(id: Long): Query0[Offer] = sql"""

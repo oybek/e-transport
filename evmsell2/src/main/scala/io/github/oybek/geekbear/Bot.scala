@@ -103,16 +103,19 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
 
   def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
     for {
-      offers <- repo.ofOffer.selectByTType(thing).map { offs =>
-        val minPrice = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
-        val maxPrice = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
-        offs.filter(offer =>
-          offer.price.exists(x => x >= minPrice && x <= maxPrice) &&
-          offer.sold.isEmpty
-        ).sortWith {
-          case (off1, off2) => off1.date > off2.date
+      userInfo <- repo.ofUser.selectById(message.fromId)
+      offers <- userInfo.traverse { case (userId, cityId) =>
+        repo.ofOffer.selectByTTypeAndCity(thing, cityId).map { offs =>
+          val minPrice = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
+          val maxPrice = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
+          offs.filter(offer =>
+            offer.price.exists(x => x >= minPrice && x <= maxPrice) &&
+              offer.sold.isEmpty
+          ).sortWith {
+            case (off1, off2) => off1.date > off2.date
+          }
         }
-      }
+      }.map(_.getOrElse(Nil))
       _ <- offers match {
         case Nil =>
           sendMessage(message.peerId, s"Нет объявлений по твоему запросу", None, defaultKeyboard())
