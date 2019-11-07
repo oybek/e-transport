@@ -9,3 +9,6 @@
 **/log*
 **/*.sc
 
+**/*.conf
+**/data.sql
+
