@@ -1,0 +1,47 @@
+
+get-long-poll-server-req {
+  access-token = ""
+  group-id = ""
+  version = "5.80"
+}
+
+get-long-poll-server-req-prod {
+  access-token = ""
+  group-id = ""
+  version = "5.80"
+}
+
+database {
+  driver = "org.postgresql.Driver"
+  url = "jdbc:postgresql://localhost:5432/evmsell"
+  user = "evmsell"
+  password = ""
+}
+
+service-key=""
+
+model {
+  // each matching gives one score, wones candidate which got maxium score
+  dict {
+    "CPU" : [ "Проц", "i3", "i5", "i7", "XEON", "Камень", "/RAM" ],
+    "BODY" : [ "Корпус" ],
+    "COOLER" : [ "Кулер", "Вентилятор" ],
+    "HDD" : [ "Жесткий", "Винчестер", "Винт", "HDD" ],
+    "HEADPHONES" : [ "Наушник" ],
+    "KEYBOARD" : [ "Клав", "Механик" ],
+    "LAPTOP" : [ "Ноут", "notebook", "laptop", "нетбук" ],
+    "LIGAMENT" : [ "Связк", "/MOTHER_BOARD", "/CPU" ],
+    "MONITOR" : [ "Монитор", "Моник" ],
+    "MOTHER_BOARD" : [ "Материн", "мат плат", "мать", "asrock" ],
+    "MOUSE" : [ "Мышк" ],
+    "PS" : [ "Playstation", "ПСка" ],
+    "RAM" : [ "Оператив", "ОЗУ" ],
+    "SSD" : [ "SSD", "ссд" ],
+    "SPEAKERS" : [ "Колонк" ],
+    "SUPPLY_BLOCK" : [ "питания" ],
+    "SYSTEM_BLOCK" : [ "Системн", "комп ", "компьютер", "игровой", "/CPU", "/RAM", "/BODY", "/SUPPLY_BLOCK", "/VIDEO_CARD", "/MOTHER_BOARD" ],
+    "VIDEO_CARD" : [ "Видях", "Видео карт", "Видеокарт", "gtx", "nvidia", "radeon", "ведяш", "видюх" ],
+    "WIFI" : [ "роутер", "wifi", "адаптер" ],
+    "XBOX" : [ "xbox", "Приставка" ],
+  }
+}
