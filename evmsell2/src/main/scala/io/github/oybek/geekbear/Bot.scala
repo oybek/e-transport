@@ -11,14 +11,15 @@ import io.github.oybek.geekbear.vk._
 import io.github.oybek.geekbear.vk.api.{Action, Button, GetLongPollServerReq, Keyboard, SendMessageReq, VkApi, WallCommentReq}
 import org.http4s.client.Client
 import org.slf4j.LoggerFactory
+import scala.concurrent.duration._
 
-case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates: Ref[F, Map[Long, List[Offer]]],
-                                              vkApi: VkApi[F],
-                                              cityServiceAlg: CityServiceAlg[F],
-                                              repo: Repositories[F],
-                                              getLongPollServerReq: GetLongPollServerReq,
-                                              jaw: Jaw[F],
-                                              wallPostHandler: WallPostHandler)
+case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userStates: Ref[F, Map[Long, List[Offer]]],
+                                                  vkApi: VkApi[F],
+                                                  cityServiceAlg: CityServiceAlg[F],
+                                                  repo: Repositories[F],
+                                                  getLongPollServerReq: GetLongPollServerReq,
+                                                  jaw: Jaw[F],
+                                                  wallPostHandler: WallPostHandler)
   extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
   private val defaultCity = 829
@@ -30,11 +31,12 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
   private val cityButton = Button(Action("text", "город поиска".some))
   private val helpButton = Button(Action("text", "помощь".some))
   private val statButton = Button(Action("text", "статистика".some))
+
   private def defaultKeyboard(topButton: Option[Button] = None) = Keyboard(
     oneTime = false,
     buttons =
       (if (topButton.nonEmpty) List(List(topButton.get)) else List()) ++
-      List(List(cityButton, helpButton, statButton))
+        List(List(cityButton, helpButton, statButton))
   ).some
 
   override def onMessageNew(message: MessageNew): F[Unit] =
@@ -69,7 +71,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
                   for {
                     _ <- repo.ofOffer.changeTType(offer.id, offer.groupId, ttype)
                     _ <- sendMessage(message.peerId, "Обновил босс", None, None)
-                  }  yield ()
+                  } yield ()
               }
             } yield ()
           case _ =>
@@ -78,13 +80,17 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
 
       case text =>
         for {
-          _ <- Sync[F].delay { log.info(s"Got message: $message") }
+          _ <- Sync[F].delay {
+            log.info(s"Got message: $message")
+          }
           cityOfUser <- repo.ofUser.cityOf(message.fromId)
           _ <- repo.ofUser.upsert(message.fromId -> defaultCity).whenA(cityOfUser.isEmpty)
           _ <- message.geo.map { geo =>
             for {
               city <- cityServiceAlg.findByCoord(geo.coordinates)
-              _ <- Sync[F].delay { log.info(s"Message has geo, updating user_info's geo: $geo") }
+              _ <- Sync[F].delay {
+                log.info(s"Message has geo, updating user_info's geo: $geo")
+              }
               _ <- repo.ofUser.upsert(message.peerId -> city.id)
               _ <- sendMessage(message.peerId,
                 s"""
@@ -122,24 +128,29 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
         case offersNonEmpty =>
           def word(n: Int): String = n match {
             case 1 => "объявление"
-            case 2|3|4 => "объявления"
+            case 2 | 3 | 4 => "объявления"
             case _ => "объявлений"
           }
-          sendMessage(
-            message.peerId,
-            s"""
-               |Я нашел ${offers.length} ${word(offers.length)}
-               |${if (offers.length > 1) "Вот первое. Напиши 'еще' я скину следующее" else "Вот оно:" }
-               |""".stripMargin,
-            attachment = s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
-            keyboard =
-              if (offers.length > 1)
-                defaultKeyboard(Some(
-                  Button(Action("text", Some(s"еще [${offers.length-1}]")))
-                ))
-              else
-                defaultKeyboard()
-          )
+
+          for {
+            _ <- sendMessage(message.peerId, "Так, начинаю искать...", Some("doc-165649310_524800694"))
+            _ <- Timer[F].sleep(3500 millis)
+            _ <- sendMessage(
+              message.peerId,
+              s"""
+                 |Я нашел ${offers.length} ${word(offers.length)}
+                 |${if (offers.length > 1) "Вот первое. Напиши 'еще' я скину следующее" else "Вот оно:"}
+                 |""".stripMargin,
+              attachment = s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
+              keyboard =
+                if (offers.length > 1)
+                  defaultKeyboard(Some(
+                    Button(Action("text", Some(s"еще [${offers.length - 1}]")))
+                  ))
+                else
+                  defaultKeyboard()
+            )
+          } yield ()
       }
       _ <- userStates.modify {
         states => (states + (message.peerId -> offers), states)
@@ -160,11 +171,11 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
             }.void
             _ <- sendMessage(
               message.peerId,
-              if (rest.length == 1) "" else s"Еще ${rest.length-1} в списке",
+              if (rest.length == 1) "" else s"Еще ${rest.length - 1} в списке",
               Some(s"wall${rest.head.groupId}_${rest.head.id}"),
               if (rest.length > 1)
                 defaultKeyboard(Some(
-                  Button(Action("text", Some(s"еще [${rest.length-1}]")))
+                  Button(Action("text", Some(s"еще [${rest.length - 1}]")))
                 ))
               else
                 defaultKeyboard()
@@ -178,22 +189,22 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
                 |Привет - Я Гик Медведь!
                 |""".stripMargin, None, defaultKeyboard()).whenA(message.text.toLowerCase == "начать")
             _ <- sendMessage(message.peerId,
-             s"""
-                |🐻 Помогу найти нужную вещь
-                |Напиши что ищешь от и до скольки, например:
-                |Системник до 20000
-                |Материнка от 1000 до 3000
-                |
-                |🐻 Я могу добавить твое объявление в поиск
-                |Для этого предложи пост на стену в формате:
-                |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
-                |2. Цену в рублях
-                |3. Описание и фотки
-                |4. Город (По умолчанию Екатеринбург)
-                |
-                |🐻 Подскажу сколько есть объявлений по каждому товару
-                |Напиши "статистика"
-                |""".stripMargin, None, defaultKeyboard())
+              s"""
+                 |🐻 Помогу найти нужную вещь
+                 |Напиши что ищешь от и до скольки, например:
+                 |Системник до 20000
+                 |Материнка от 1000 до 3000
+                 |
+                 |🐻 Я могу добавить твое объявление в поиск
+                 |Для этого предложи пост на стену в формате:
+                 |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
+                 |2. Цену в рублях
+                 |3. Описание и фотки
+                 |4. Город (По умолчанию Екатеринбург)
+                 |
+                 |🐻 Подскажу сколько есть объявлений по каждому товару
+                 |Напиши "статистика"
+                 |""".stripMargin, None, defaultKeyboard())
           } yield ()
 
         case "еще" | "ещё" =>
@@ -202,7 +213,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
         case "статистика" =>
           for {
             stats <- repo.ofStat.stats
-            byTypeCount = stats._3.sortBy(- _._2).map {
+            byTypeCount = stats._3.sortBy(-_._2).map {
               case (ttype, count) => s"${wallPostHandler.getRussianName(ttype)} = $count штук"
             }.mkString("\n")
             _ <- sendMessage(message.peerId,
@@ -250,7 +261,9 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
       keyboard = keyboard
     )
     for {
-      _ <- Sync[F].delay { log.info(s"Sending message: $sendMessageReq") }
+      _ <- Sync[F].delay {
+        log.info(s"Sending message: $sendMessageReq")
+      }
       _ <- vkApi.sendMessage(sendMessageReq).void
     } yield ()
   }
@@ -259,18 +272,22 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
     wallPostNew.postType match {
       case Some("suggest") =>
         for {
-          _ <- Sync[F].delay { log.info(s"Got new wallpost suggestion: $wallPostNew") }
+          _ <- Sync[F].delay {
+            log.info(s"Got new wallpost suggestion: $wallPostNew")
+          }
           _ <- adminIds.traverse(id =>
             sendMessage(
               id,
               "Новая запись на модерацию",
               Some(s"wall-${getLongPollServerReq.groupId}_${wallPostNew.id}")
-          )).void
+            )).void
         } yield ()
 
       case Some("post") =>
         for {
-          _ <- Sync[F].delay { log.info(s"Posting new wallpost: ${wallPostNew.toString}") }
+          _ <- Sync[F].delay {
+            log.info(s"Posting new wallpost: ${wallPostNew.toString}")
+          }
           city <- wallPostNew.geo.traverse(geo => cityServiceAlg.findByCoord(geo.coordinates))
 
           userInfo = for {
@@ -295,7 +312,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
                 id,
                 "Ты опубликовал предложение без подписи! Поправь и обнови в базе",
                 attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
-            )).void
+              )).void
           }
         } yield ()
 
@@ -324,13 +341,13 @@ case class Bot[F[_]: Async: Timer: Concurrent](httpClient: Client[F], userStates
             )
           } yield ()
         }
-      } yield()
+      } yield ()
       case _ => Sync[F].delay().void
     }
 
   private def daysHours(seconds: Long): String = {
-    val days = seconds/(24*60*60)
-    val hours = seconds%(24*60*60)/(60*60)
-    s"${if (days > 0) days + " суток" else ""} ${if (hours > 0) hours + " часов" else " часа" }"
+    val days = seconds / (24 * 60 * 60)
+    val hours = seconds % (24 * 60 * 60) / (60 * 60)
+    s"${if (days > 0) days + " суток" else ""} ${if (hours > 0) hours + " часов" else " часа"}"
   }
 }

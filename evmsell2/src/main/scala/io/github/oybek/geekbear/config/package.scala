@@ -26,9 +26,11 @@ package object config {
     import pureconfig.generic.auto._
     import pureconfig._
 
-    def load[F[_]: Sync](configFile: String = "application.conf"): F[Config] = {
+    def load[F[_]: Sync](configFileName: Option[String]): F[Config] = {
       Sync[F].delay {
-        loadConfig[Config](ConfigFactory.parseFile(new File(configFile)))
+        configFileName
+          .map(x => loadConfig[Config](ConfigFactory.parseFile(new File(x))))
+          .getOrElse(loadConfig[Config](ConfigFactory.load("application.conf")))
       }.flatMap {
         case Left(e) => Sync[F].raiseError[Config](new ConfigReaderException[Config](e))
         case Right(config) =>
