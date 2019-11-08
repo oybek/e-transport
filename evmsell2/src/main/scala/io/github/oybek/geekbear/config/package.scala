@@ -1,3 +1,5 @@
+import java.io.File
+
 import cats.effect.Sync
 import cats.implicits._
 import com.typesafe.config.ConfigFactory
@@ -26,7 +28,7 @@ package object config {
 
     def load[F[_]: Sync](configFile: String = "application.conf"): F[Config] = {
       Sync[F].delay {
-        loadConfig[Config](ConfigFactory.load(configFile))
+        loadConfig[Config](ConfigFactory.parseFile(new File(configFile)))
       }.flatMap {
         case Left(e) => Sync[F].raiseError[Config](new ConfigReaderException[Config](e))
         case Right(config) =>

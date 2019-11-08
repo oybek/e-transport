@@ -22,7 +22,8 @@ object Application extends App {
   val root =
     for {
       userStates <- Ref.of[Task, Map[Long, List[Offer]]](Map())
-      config <- Config.load[Task]()
+      configFile <- Task.delay { System.getProperty("application.conf") }
+      config <- Config.load[Task](configFile)
       transactor <- DB.transactor[Task](config.database)
       wallPostHandler = WallPostHandler(config.model)
       repos = Repositories(
