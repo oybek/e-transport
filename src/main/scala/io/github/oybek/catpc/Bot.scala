@@ -133,8 +133,8 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
           }
 
           for {
-            _ <- sendMessage(message.peerId, "Так, начинаю искать...", Some("doc-165649310_524800694"))
-            _ <- Timer[F].sleep(3500 millis)
+            _ <- sendMessage(message.peerId, "Так, посмотрим что есть по городу...")
+            _ <- Timer[F].sleep(1500 millis)
             _ <- sendMessage(
               message.peerId,
               s"""
