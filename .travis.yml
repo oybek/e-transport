@@ -1,0 +1,12 @@
+language: scala
+scala:
+  - 2.12.8
+branches:
+  only:
+    - master
+notifications:
+  email:
+    recipients:
+      - aybek.hashimov@gmail.com
+
+jdk: oraclejdk8
