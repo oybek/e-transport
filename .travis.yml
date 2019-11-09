@@ -6,6 +6,7 @@ scala:
 branches:
   only:
   - master
+  - stage
 notifications:
   email:
     recipients:
@@ -23,4 +24,8 @@ after_success:
   - if [ $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]; then
       scp target/scala-2.12/catpc-assembly-0.1.jar oybek@botlabs.ru:/home/oybek/catpc/master/catpc.jar;
       ssh -t oybek@botlabs.ru '/home/oybek/catpc/master/restart.sh';
+    fi
+  - if [ $TRAVIS_BRANCH == "stage" && $TRAVIS_PULL_REQUEST == "false" ]; then
+      scp target/scala-2.12/catpc-assembly-0.1.jar oybek@botlabs.ru:/home/oybek/catpc/stage/catpc.jar;
+      ssh -t oybek@botlabs.ru '/home/oybek/catpc/stage/restart.sh';
     fi
