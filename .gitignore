@@ -12,3 +12,5 @@
 **/*.conf
 **/data.sql
 
+.travis_deploy_key
+
