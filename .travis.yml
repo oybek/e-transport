@@ -18,4 +18,4 @@ after_success:
   - eval "$(ssh-agent -s)"
   - chmod 600 .travis_deploy_key
   - ssh-add .travis_deploy_key
-  - ls
+  - scp target/scala-2.12/catpc-assembly-0.1.jar oybek@botlabs.ru:/tmp/catpc.jar
