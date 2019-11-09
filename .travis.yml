@@ -9,5 +9,8 @@ notifications:
     recipients:
       - aybek.hashimov@gmail.com
 
+script:
+  sbt assembly
+
 jdk: oraclejdk8
 dist: trusty
