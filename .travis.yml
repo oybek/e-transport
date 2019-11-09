@@ -1,4 +1,9 @@
 language: scala
+dist: trusty
+before_install:
+- openssl aes-256-cbc -K $encrypted_c8e73cee7f92_key -iv $encrypted_c8e73cee7f92_iv
+  -in .travis_deploy_key.enc -out .travis_deploy_key -d
+jdk: oraclejdk8
 addons:
   ssh_known_hosts: botlabs.ru
 scala:
@@ -12,20 +17,15 @@ notifications:
     recipients:
     - aybek.hashimov@gmail.com
 script: sbt assembly
-jdk: oraclejdk8
-dist: trusty
-before_install:
-- openssl aes-256-cbc -K $encrypted_c8e73cee7f92_key -iv $encrypted_c8e73cee7f92_iv
-  -in .travis_deploy_key.enc -out .travis_deploy_key -d
 after_success:
   - eval "$(ssh-agent -s)"
   - chmod 600 .travis_deploy_key
   - ssh-add .travis_deploy_key
-  - if [ $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]; then
+  - if [[ $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then
       scp target/scala-2.12/catpc-assembly-0.1.jar oybek@botlabs.ru:/home/oybek/catpc/master/catpc.jar;
       ssh -t oybek@botlabs.ru '/home/oybek/catpc/master/restart.sh';
     fi
-  - if [ $TRAVIS_BRANCH == "stage" && $TRAVIS_PULL_REQUEST == "false" ]; then
+  - if [[ $TRAVIS_BRANCH == "stage" && $TRAVIS_PULL_REQUEST == "false" ]]; then
       scp target/scala-2.12/catpc-assembly-0.1.jar oybek@botlabs.ru:/home/oybek/catpc/stage/catpc.jar;
       ssh -t oybek@botlabs.ru '/home/oybek/catpc/stage/restart.sh';
     fi
