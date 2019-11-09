@@ -22,5 +22,5 @@ after_success:
   - ssh-add .travis_deploy_key
   - if [ $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]; then
       scp target/scala-2.12/catpc-assembly-0.1.jar oybek@botlabs.ru:/home/oybek/catpc/master/catpc.jar;
-      ssh -t oybek@botlabs.ru '/home/oybek/catpc/master/restart.sh'
+      ssh -t oybek@botlabs.ru '/home/oybek/catpc/master/restart.sh';
     fi
