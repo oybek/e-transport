@@ -1,6 +1,8 @@
 
 # CAT-PC
 
+[![Build Status](https://travis-ci.org/oybek/catpc.svg?branch=master)](https://travis-ci.org/oybek/catpc)
+
 Cat-pc is a simple chat bot which aggregates and searches sell offers in social network vk.
 
 ![](https://thumbs.gfycat.com/FluffyPiercingEkaltadeta-size_restricted.gif)
