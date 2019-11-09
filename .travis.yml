@@ -10,3 +10,4 @@ notifications:
       - aybek.hashimov@gmail.com
 
 jdk: oraclejdk8
+dist: trusty
