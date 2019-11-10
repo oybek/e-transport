@@ -3,37 +3,43 @@ package io.github.oybek.catpc.db.repository
 import cats.Monad
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
-import doobie.util.query.Query0
+import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
-import doobie.util.update.Update0
-import io.github.oybek.catpc.model.Offer
+import doobie.Fragments._
 
 trait StatsRepositoryAlgebra[F[_]] {
-  def stats: F[(Int, Int, List[(String, Int)])]
+  def stats(cityId: Option[Int] = None): F[(Int, Int, List[(String, Int)])]
 }
 
-case class StatsRepository[F[_]: Monad](transactor: Transactor[F]) extends StatsRepositoryAlgebra[F] {
+case class StatsRepository[F[_] : Monad](transactor: Transactor[F]) extends StatsRepositoryAlgebra[F] {
 
-  override def stats: F[(Int, Int, List[(String, Int)])] = (
+  override def stats(cityId: Option[Int] = None): F[(Int, Int, List[(String, Int)])] = (
     for {
-      total <- offerNum
-      in24 <- offerNumLast24h
-      countByType <- countByTType
+      total <- offerNum(cityId)
+      in24 <- offerNumLast24h(cityId)
+      countByType <- countByTType(cityId)
     } yield (total, in24, countByType)
-  ).transact(transactor)
+    ).transact(transactor)
 
-  private def offerNum =
-    sql"select count(id) from offer"
+  private def offerNum(cityId: Option[Int] = None): ConnectionIO[Int] =
+    (fr"select count(id) from offer" ++ whereAndOpt(cityId.map(x => fr"city = $x")))
       .query[Int]
       .unique
 
-  private def countByTType: ConnectionIO[List[(String, Int)]] =
-    sql"select ttype, count(ttype) from offer where sold is null and ttype is not null group by ttype"
+  private def countByTType(cityId: Option[Int] = None): ConnectionIO[List[(String, Int)]] =
+    (fr"select ttype, count(ttype) from offer" ++
+      whereAndOpt(
+        Some(fr"sold is null"),
+        Some(fr"ttype is not null"),
+        cityId.map(x => fr"city = $x")) ++ fr"group by ttype")
       .query[(String, Int)]
       .to[List]
 
-  private def offerNumLast24h =
-    sql"select count(id) from offer where extract(epoch from now()) - date < 24*60*60"
+  private def offerNumLast24h(cityId: Option[Int] = None): ConnectionIO[Int] =
+    (fr"select count(id) from offer" ++
+      whereAndOpt(
+        Some(fr"extract(epoch from now()) - date < 24*60*60"),
+        cityId.map(x => fr"city = $x")))
       .query[Int]
       .unique
 }
