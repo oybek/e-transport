@@ -39,7 +39,8 @@ object Dependencies {
   val doobie = Seq(
     "org.tpolecat"          %% "doobie-core"          % V.doobie,
     "org.tpolecat"          %% "doobie-postgres"      % V.doobie,
-    "org.tpolecat"          %% "doobie-hikari"        % V.doobie
+    "org.tpolecat"          %% "doobie-hikari"        % V.doobie,
+    "org.tpolecat"          %% "doobie-h2"            % V.doobie
   )
 
   val circe = Seq(
