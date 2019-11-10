@@ -212,12 +212,15 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
 
         case "статистика" =>
           for {
-            stats <- repo.ofStat.stats
+            cityId <- repo.ofUser.cityOf(message.peerId)
+            city <- cityId.flatTraverse(repo.ofCity.selectById)
+            stats <- repo.ofStat.stats(cityId)
             byTypeCount = stats._3.sortBy(-_._2).map {
               case (ttype, count) => s"${wallPostHandler.getRussianName(ttype)} = $count штук"
             }.mkString("\n")
             _ <- sendMessage(message.peerId,
               s"""
+                 |Город: ${city.map(_.name).getOrElse("Не определен")}
                  |Всего предложений ${stats._1}
                  |За последние 24 часа ${stats._2}
                  |
@@ -229,7 +232,7 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
           for {
             userOpt <- repo.ofUser.selectById(message.fromId)
             city <- userOpt.flatTraverse {
-              case (userId, cityId) => repo.ofCity.selectById(cityId)
+              case (_, cityId) => repo.ofCity.selectById(cityId)
             }
             cityText = city.map(_.name).getOrElse("Не определен")
             _ <- sendMessage(message.peerId,
