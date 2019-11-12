@@ -8,19 +8,29 @@ import io.github.oybek.catpc.db.repository.Repositories
 import io.github.oybek.catpc.model.Offer
 import io.github.oybek.catpc.service.{CityServiceAlg, Jaw, WallPostHandler}
 import io.github.oybek.catpc.vk._
-import io.github.oybek.catpc.vk.api.{Action, Button, GetLongPollServerReq, Keyboard, SendMessageReq, VkApi, WallCommentReq}
+import io.github.oybek.catpc.vk.api.{
+  Action,
+  Button,
+  GetLongPollServerReq,
+  Keyboard,
+  SendMessageReq,
+  VkApi,
+  WallCommentReq
+}
 import org.http4s.client.Client
 import org.slf4j.LoggerFactory
 import scala.concurrent.duration._
 
-case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userStates: Ref[F, Map[Long, List[Offer]]],
-                                                  vkApi: VkApi[F],
-                                                  cityServiceAlg: CityServiceAlg[F],
-                                                  repo: Repositories[F],
-                                                  getLongPollServerReq: GetLongPollServerReq,
-                                                  jaw: Jaw[F],
-                                                  wallPostHandler: WallPostHandler)
-  extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
+case class Bot[F[_]: Async: Timer: Concurrent](
+  httpClient: Client[F],
+  userStates: Ref[F, Map[Long, List[Offer]]],
+  vkApi: VkApi[F],
+  cityServiceAlg: CityServiceAlg[F],
+  repo: Repositories[F],
+  getLongPollServerReq: GetLongPollServerReq,
+  jaw: Jaw[F],
+  wallPostHandler: WallPostHandler
+) extends LongPollBot[F](httpClient, vkApi, getLongPollServerReq) {
 
   private val defaultCity = 829
 
@@ -32,12 +42,13 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
   private val helpButton = Button(Action("text", "помощь".some))
   private val statButton = Button(Action("text", "статистика".some))
 
-  private def defaultKeyboard(topButton: Option[Button] = None) = Keyboard(
-    oneTime = false,
-    buttons =
-      (if (topButton.nonEmpty) List(List(topButton.get)) else List()) ++
-        List(List(cityButton, helpButton, statButton))
-  ).some
+  private def defaultKeyboard(topButton: Option[Button] = None) =
+    Keyboard(
+      oneTime = false,
+      buttons =
+        (if (topButton.nonEmpty) List(List(topButton.get)) else List()) ++
+          List(List(cityButton, helpButton, statButton))
+    ).some
 
   override def onMessageNew(message: MessageNew): F[Unit] =
     message.text match {
@@ -46,15 +57,26 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
           .findFirstIn(text)
           .traverse { groupId =>
             for {
-              _ <- sendMessage(message.peerId, "Начинаю пожирать данную группу...")
-              res <- jaw.breakfast(List(groupId.toLong), adminIds, message.geo.map(_.coordinates))
-              _ <- sendMessage(message.peerId, s"Сожрал ${res.length} постов\nПереварил ${res.count(_.isRight)}")
+              _ <- sendMessage(
+                message.peerId,
+                "Начинаю пожирать данную группу..."
+              )
+              res <- jaw.breakfast(
+                List(groupId.toLong),
+                adminIds,
+                message.geo.map(_.coordinates)
+              )
+              _ <- sendMessage(
+                message.peerId,
+                s"Сожрал ${res.length} постов\nПереварил ${res.count(_.isRight)}"
+              )
             } yield ()
-          }.whenA(adminIds.contains(message.peerId) && message.geo.nonEmpty).start.void
+          }
+          .whenA(adminIds.contains(message.peerId) && message.geo.nonEmpty)
+          .start
+          .void
 
-      case text if Seq(
-        text.startsWith("это")
-      ).forall(identity) =>
+      case text if Seq(text.startsWith("это")).forall(identity) =>
         (text.split(' ') match {
           case Array(_, textPart) =>
             for {
@@ -69,7 +91,11 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
                   sendMessage(message.peerId, "Чегооо блять?", None, None)
                 case Some((offer, ttype)) =>
                   for {
-                    _ <- repo.ofOffer.changeTType(offer.id, offer.groupId, ttype)
+                    _ <- repo.ofOffer.changeTType(
+                      offer.id,
+                      offer.groupId,
+                      ttype
+                    )
                     _ <- sendMessage(message.peerId, "Обновил босс", None, None)
                   } yield ()
               }
@@ -84,76 +110,106 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
             log.info(s"Got message: $message")
           }
           cityOfUser <- repo.ofUser.cityOf(message.fromId)
-          _ <- repo.ofUser.upsert(message.fromId -> defaultCity).whenA(cityOfUser.isEmpty)
-          _ <- message.geo.map { geo =>
-            for {
-              city <- cityServiceAlg.findByCoord(geo.coordinates)
-              _ <- Sync[F].delay {
-                log.info(s"Message has geo, updating user_info's geo: $geo")
-              }
-              _ <- repo.ofUser.upsert(message.peerId -> city.id)
-              _ <- sendMessage(message.peerId,
-                s"""
+          _ <- repo.ofUser
+            .upsert(message.fromId -> defaultCity)
+            .whenA(cityOfUser.isEmpty)
+          _ <- message.geo
+            .map { geo =>
+              for {
+                city <- cityServiceAlg.findByCoord(geo.coordinates)
+                _ <- Sync[F].delay {
+                  log.info(s"Message has geo, updating user_info's geo: $geo")
+                }
+                _ <- repo.ofUser.upsert(message.peerId -> city.id)
+                _ <- sendMessage(message.peerId, s"""
                    |Отлично!
                    |Теперь я буду искать объявления в городе ${city.name}
                    |""".stripMargin, None, defaultKeyboard())
-            } yield ()
-          }.getOrElse {
-            wallPostHandler.getTType(text) match {
-              case Some(thing) => whenNewSearch(message)(thing)
-              case None => whenNotSearch(message)
+              } yield ()
             }
-          }
+            .getOrElse {
+              wallPostHandler.getTType(text) match {
+                case Some(thing) => whenNewSearch(message)(thing)
+                case None        => whenNotSearch(message)
+              }
+            }
         } yield ()
     }
 
   def whenNewSearch(message: MessageNew)(thing: String): F[Unit] =
     for {
       userInfo <- repo.ofUser.selectById(message.fromId)
-      offers <- userInfo.traverse { case (userId, cityId) =>
-        repo.ofOffer.selectByTTypeAndCity(thing, cityId).map { offs =>
-          val minPrice = "от[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(0L)
-          val maxPrice = "до[ ]+\\d+".r.findFirstIn(message.text).map(_.split(' ')(1).toLong).getOrElse(Long.MaxValue)
-          offs.filter(offer =>
-            offer.price.exists(x => x >= minPrice && x <= maxPrice) &&
-              offer.sold.isEmpty
-          ).sortWith {
-            case (off1, off2) => off1.date > off2.date
-          }
+      offers <- userInfo
+        .traverse {
+          case (userId, cityId) =>
+            repo.ofOffer.selectByTTypeAndCity(thing, cityId).map { offs =>
+              val minPrice = "от[ ]+\\d+".r
+                .findFirstIn(message.text)
+                .map(_.split(' ')(1).toLong)
+                .getOrElse(0L)
+              val maxPrice = "до[ ]+\\d+".r
+                .findFirstIn(message.text)
+                .map(_.split(' ')(1).toLong)
+                .getOrElse(Long.MaxValue)
+              offs
+                .filter(
+                  offer =>
+                    offer.price.exists(x => x >= minPrice && x <= maxPrice) &&
+                      offer.sold.isEmpty
+                )
+                .sortWith {
+                  case (off1, off2) => off1.date > off2.date
+                }
+            }
         }
-      }.map(_.getOrElse(Nil))
+        .map(_.getOrElse(Nil))
       _ <- offers match {
         case Nil =>
-          sendMessage(message.peerId, s"Нет объявлений по твоему запросу", None, defaultKeyboard())
+          sendMessage(
+            message.peerId,
+            s"Нет объявлений по твоему запросу",
+            None,
+            defaultKeyboard()
+          )
         case offersNonEmpty =>
           def word(n: Int): String = n match {
-            case 1 => "объявление"
+            case 1         => "объявление"
             case 2 | 3 | 4 => "объявления"
-            case _ => "объявлений"
+            case _         => "объявлений"
           }
 
           for {
-            _ <- sendMessage(message.peerId, "Так, посмотрим что есть по городу...")
+            _ <- sendMessage(
+              message.peerId,
+              "Так, посмотрим что есть по городу..."
+            )
             _ <- Timer[F].sleep(1500 millis)
             _ <- sendMessage(
               message.peerId,
               s"""
                  |Я нашел ${offers.length} ${word(offers.length)}
-                 |${if (offers.length > 1) "Вот первое. Напиши 'еще' я скину следующее" else "Вот оно:"}
+                 |${if (offers.length > 1)
+                   "Вот первое. Напиши 'еще' я скину следующее"
+                 else "Вот оно:"}
                  |""".stripMargin,
-              attachment = s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
+              attachment =
+                s"wall${offersNonEmpty.head.groupId}_${offersNonEmpty.head.id}".some,
               keyboard =
                 if (offers.length > 1)
-                  defaultKeyboard(Some(
-                    Button(Action("text", Some(s"еще [${offers.length - 1}]")))
-                  ))
+                  defaultKeyboard(
+                    Some(
+                      Button(
+                        Action("text", Some(s"еще [${offers.length - 1}]"))
+                      )
+                    )
+                  )
                 else
                   defaultKeyboard()
             )
           } yield ()
       }
-      _ <- userStates.modify {
-        states => (states + (message.peerId -> offers), states)
+      _ <- userStates.modify { states =>
+        (states + (message.peerId -> offers), states)
       }
     } yield ()
 
@@ -174,9 +230,11 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
               if (rest.length == 1) "" else s"Еще ${rest.length - 1} в списке",
               Some(s"wall${rest.head.groupId}_${rest.head.id}"),
               if (rest.length > 1)
-                defaultKeyboard(Some(
-                  Button(Action("text", Some(s"еще [${rest.length - 1}]")))
-                ))
+                defaultKeyboard(
+                  Some(
+                    Button(Action("text", Some(s"еще [${rest.length - 1}]")))
+                  )
+                )
               else
                 defaultKeyboard()
             )
@@ -184,26 +242,29 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
 
         case "помощь" | "начать" =>
           for {
-            _ <- sendMessage(message.peerId,
+            _ <- sendMessage(
+              message.peerId,
               """
-                |Привет - Я Гик Медведь!
-                |""".stripMargin, None, defaultKeyboard()).whenA(message.text.toLowerCase == "начать")
-            _ <- sendMessage(message.peerId,
-              s"""
-                 |1. Помогу найти нужную вещь
-                 |Напиши что ищешь от и до скольки, например:
+                |Привет - Я Кот!
+                |Помогу продать или купить все что связано с компами.
+                |""".stripMargin,
+              None,
+              defaultKeyboard()
+            ).whenA(message.text.toLowerCase == "начать")
+            _ <- sendMessage(message.peerId, s"""
+                 |Я умею искать объявления по всем группа ВК
+                 | 
+                 |Напиши что надо найти, например:
                  |Системник до 20000
-                 |Материнка от 1000 до 3000
+                 |Видяха от 1000 до 3000
+                 |и т. д.
                  |
-                 |2. Я могу добавить твое объявление в поиск
-                 |Для этого предложи пост на стену в формате:
-                 |1. Название товара (Ноут, Системник, Моник, Материка и т. п.)
-                 |2. Цену в рублях
-                 |3. Описание и фотки
-                 |4. Город (По умолчанию Екатеринбург)
-                 |
-                 |3. Подскажу сколько есть объявлений по каждому товару
-                 |Напиши "статистика"
+                 |Если хочешь что-то продать - просто создай объявление
+                 |на стене https://vk.com/catpc в таком формате:
+                 |- Название товара (Ноут, Системник, Моник, Материка и т. п.)
+                 |- Цену в рублях
+                 |- Укажи город
+                 |- Описание и фотки
                  |""".stripMargin, None, defaultKeyboard())
           } yield ()
 
@@ -215,11 +276,14 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
             cityId <- repo.ofUser.cityOf(message.peerId)
             city <- cityId.flatTraverse(repo.ofCity.selectById)
             stats <- repo.ofStat.stats(cityId)
-            byTypeCount = stats._3.sortBy(-_._2).map {
-              case (ttype, count) => s"${wallPostHandler.getRussianName(ttype)} = $count штук"
-            }.mkString("\n")
-            _ <- sendMessage(message.peerId,
-              s"""
+            byTypeCount = stats._3
+              .sortBy(-_._2)
+              .map {
+                case (ttype, count) =>
+                  s"${wallPostHandler.getRussianName(ttype)} = $count штук"
+              }
+              .mkString("\n")
+            _ <- sendMessage(message.peerId, s"""
                  |Город: ${city.map(_.name).getOrElse("Не определен")}
                  |Всего предложений ${stats._1}
                  |За последние 24 часа ${stats._2}
@@ -235,24 +299,22 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
               case (_, cityId) => repo.ofCity.selectById(cityId)
             }
             cityText = city.map(_.name).getOrElse("Не определен")
-            _ <- sendMessage(message.peerId,
-              s"""
+            _ <- sendMessage(message.peerId, s"""
                  |Твой город поиска: $cityText
                  |Отправь геопозицию если хочешь сменить город поиска
                  |""".stripMargin, None, defaultKeyboard())
           } yield ()
 
         case _ =>
-          sendMessage(message.peerId,
-            s"""
+          sendMessage(message.peerId, s"""
                |Не очень понял тебя
                |Напиши 'помощь' я подскажу что умею
-               |""".stripMargin,
-            None, defaultKeyboard())
+               |""".stripMargin, None, defaultKeyboard())
       }
     } yield ()
 
-  private def sendMessage(to: Long, text: String,
+  private def sendMessage(to: Long,
+                          text: String,
                           attachment: Option[String] = None,
                           keyboard: Option[Keyboard] = None): F[Unit] = {
     val sendMessageReq = SendMessageReq(
@@ -278,12 +340,18 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
           _ <- Sync[F].delay {
             log.info(s"Got new wallpost suggestion: $wallPostNew")
           }
-          _ <- adminIds.traverse(id =>
-            sendMessage(
-              id,
-              "Новая запись на модерацию",
-              Some(s"wall-${getLongPollServerReq.groupId}_${wallPostNew.id}")
-            )).void
+          _ <- adminIds
+            .traverse(
+              id =>
+                sendMessage(
+                  id,
+                  "Новая запись на модерацию",
+                  Some(
+                    s"wall-${getLongPollServerReq.groupId}_${wallPostNew.id}"
+                  )
+              )
+            )
+            .void
         } yield ()
 
       case Some("post") =>
@@ -291,7 +359,9 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
           _ <- Sync[F].delay {
             log.info(s"Posting new wallpost: ${wallPostNew.toString}")
           }
-          city <- wallPostNew.geo.traverse(geo => cityServiceAlg.findByCoord(geo.coordinates))
+          city <- wallPostNew.geo.traverse(
+            geo => cityServiceAlg.findByCoord(geo.coordinates)
+          )
 
           userInfo = for {
             userId <- wallPostNew.signerId
@@ -301,21 +371,28 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
           _ <- userInfo.traverse(x => repo.ofUser.upsert(x))
           city <- wallPostNew.signerId.flatTraverse(repo.ofUser.cityOf)
 
-          offer = wallPostHandler.wallPostToOffer(wallPostNew)
+          offer = wallPostHandler
+            .wallPostToOffer(wallPostNew)
             .copy(city = city)
           _ <- repo.ofOffer.insert(offer)
           _ <- wallPostNew.signerId map { signerId =>
             sendMessage(
               signerId,
               "Твое предложение опубликовано",
-              Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")).void
+              Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
+            ).void
           } getOrElse {
-            adminIds.traverse(id =>
-              sendMessage(
-                id,
-                "Ты опубликовал предложение без подписи! Поправь и обнови в базе",
-                attachment = Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
-              )).void
+            adminIds
+              .traverse(
+                id =>
+                  sendMessage(
+                    id,
+                    "Ты опубликовал предложение без подписи! Поправь и обнови в базе",
+                    attachment =
+                      Some(s"wall${wallPostNew.ownerId}_${wallPostNew.id}")
+                )
+              )
+              .void
           }
         } yield ()
 
@@ -325,32 +402,37 @@ case class Bot[F[_] : Async : Timer : Concurrent](httpClient: Client[F], userSta
 
   override def onWallReplyNew(wallReplyNew: WallReplyNew): F[Unit] =
     wallReplyNew.text.toLowerCase match {
-      case "продан" => for {
-        offerOpt <- repo.ofOffer.selectById(wallReplyNew.postId)
-        _ <- offerOpt.filter { offer =>
-          offer.fromId == wallReplyNew.fromId && offer.sold.isEmpty
-        }.traverse { offer =>
-          for {
-            _ <- repo.ofOffer.sold(offer.id, wallReplyNew.date)
-            _ <- vkApi.wallComment(
-              WallCommentReq(
-                ownerId = -getLongPollServerReq.groupId.toLong,
-                postId = offer.id,
-                message = s"Продан в течении ${daysHours(wallReplyNew.date - offer.date)}",
-                replyToComment = wallReplyNew.id,
-                version = getLongPollServerReq.version,
-                accessToken = getLongPollServerReq.accessToken,
-              )
-            )
-          } yield ()
-        }
-      } yield ()
+      case "продан" =>
+        for {
+          offerOpt <- repo.ofOffer.selectById(wallReplyNew.postId)
+          _ <- offerOpt
+            .filter { offer =>
+              offer.fromId == wallReplyNew.fromId && offer.sold.isEmpty
+            }
+            .traverse { offer =>
+              for {
+                _ <- repo.ofOffer.sold(offer.id, wallReplyNew.date)
+                _ <- vkApi.wallComment(
+                  WallCommentReq(
+                    ownerId = -getLongPollServerReq.groupId.toLong,
+                    postId = offer.id,
+                    message =
+                      s"Продан в течении ${daysHours(wallReplyNew.date - offer.date)}",
+                    replyToComment = wallReplyNew.id,
+                    version = getLongPollServerReq.version,
+                    accessToken = getLongPollServerReq.accessToken,
+                  )
+                )
+              } yield ()
+            }
+        } yield ()
       case _ => Sync[F].delay().void
     }
 
   private def daysHours(seconds: Long): String = {
     val days = seconds / (24 * 60 * 60)
     val hours = seconds % (24 * 60 * 60) / (60 * 60)
-    s"${if (days > 0) days + " суток" else ""} ${if (hours > 0) hours + " часов" else " часа"}"
+    s"${if (days > 0) days + " суток" else ""} ${if (hours > 0) hours + " часов"
+    else " часа"}"
   }
 }
