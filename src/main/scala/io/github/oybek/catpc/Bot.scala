@@ -148,8 +148,8 @@ case class Bot[F[_]: Async: Timer: Concurrent](
                 .map(_.split(' ')(1).toLong)
               val (minPrice, maxPrice) = exactPrice match {
                 case Some(value) => {
-                  val coeff= value*0.1
-                  (value - coeff, value + coeff)
+                  val coeff = value * 0.1
+                  ((value - coeff).toLong, (value + coeff).toLong)
                 }
                 case None => {
                   val min = "от[ ]+\\d+".r
@@ -160,7 +160,7 @@ case class Bot[F[_]: Async: Timer: Concurrent](
                     .findFirstIn(message.text)
                     .map(_.split(' ')(1).toLong)
                     .getOrElse(Long.MaxValue)
-                  (min,max)
+                  (min, max)
                 }
               }
               offs
