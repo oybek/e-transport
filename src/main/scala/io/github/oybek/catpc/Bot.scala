@@ -143,14 +143,26 @@ case class Bot[F[_]: Async: Timer: Concurrent](
         .traverse {
           case (userId, cityId) =>
             repo.ofOffer.selectByTTypeAndCity(thing, cityId).map { offs =>
-              val minPrice = "от[ ]+\\d+".r
+              val exactPrice = "за[ ]+\\d+".r
                 .findFirstIn(message.text)
                 .map(_.split(' ')(1).toLong)
-                .getOrElse(0L)
-              val maxPrice = "до[ ]+\\d+".r
-                .findFirstIn(message.text)
-                .map(_.split(' ')(1).toLong)
-                .getOrElse(Long.MaxValue)
+              val (minPrice, maxPrice) = exactPrice match {
+                case Some(value) => {
+                  val coeff= value*0.1
+                  (value - coeff, value + coeff)
+                }
+                case None => {
+                  val min = "от[ ]+\\d+".r
+                    .findFirstIn(message.text)
+                    .map(_.split(' ')(1).toLong)
+                    .getOrElse(0L)
+                  val max = "до[ ]+\\d+".r
+                    .findFirstIn(message.text)
+                    .map(_.split(' ')(1).toLong)
+                    .getOrElse(Long.MaxValue)
+                  (min,max)
+                }
+              }
               offs
                 .filter(
                   offer =>
